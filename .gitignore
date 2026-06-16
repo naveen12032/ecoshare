@@ -1,0 +1,19 @@
+# Node dependencies
+node_modules/
+
+# Local build artifacts
+www/
+android/.gradle/
+android/app/build/
+android/local.properties
+.gradle/
+build/
+
+# Private environment configurations
+firebase-config.json
+
+# IDE config files
+.idea/
+.vscode/
+Thumbs.db
+.DS_Store

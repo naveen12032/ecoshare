@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>EcoShare - Community Resource Sharing & Sustainability Platform</title>
   <meta name="description" content="Share unused resources, reduce waste, and promote sustainable living with your neighbors. Build a greener community together using EcoShare.">
   
@@ -77,6 +77,47 @@
         </button>
       </div>
     </aside>
+
+    <!-- ======= MOBILE TOP HEADER (hidden on desktop) ======= -->
+    <div class="mobile-top-bar" id="mobileTopBar" style="display:none;">
+      <div class="mobile-brand">
+        <div class="brand-logo" style="width:32px;height:32px;">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
+        </div>
+        <span class="mobile-brand-name">EcoShare</span>
+      </div>
+      <div class="mobile-top-actions">
+        <button id="mobileThemeToggle" class="btn btn-secondary btn-icon-only mobile-icon-btn" aria-label="Toggle theme" title="Toggle theme"></button>
+        <button id="mobileLogoutBtn" class="mobile-logout-btn" title="Sign Out" aria-label="Sign out">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          <span>Logout</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ======= MOBILE BOTTOM NAV (hidden on desktop) ======= -->
+    <nav class="mobile-bottom-nav" id="mobileBottomNav" style="display:none;" aria-label="Mobile Navigation">
+      <a href="#dashboard" id="mobileNavDashboard" class="mobile-nav-item active">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"></rect><rect x="14" y="3" width="7" height="5" rx="1"></rect><rect x="14" y="12" width="7" height="9" rx="1"></rect><rect x="3" y="16" width="7" height="5" rx="1"></rect></svg>
+        <span>Home</span>
+      </a>
+      <a href="#messages" id="mobileNavMessages" class="mobile-nav-item">
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+        <span>Messages</span>
+      </a>
+      <a href="#" id="mobileNavShare" class="mobile-nav-item">
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+        <span>Share</span>
+      </a>
+      <a href="#settings" id="mobileNavSettings" class="mobile-nav-item">
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        <span>Connect</span>
+      </a>
+      <a href="#admin" id="mobileNavAdmin" class="mobile-nav-item" style="display:none;">
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+        <span>Admin</span>
+      </a>
+    </nav>
 
     <!-- Main View Window -->
     <main class="main-content">

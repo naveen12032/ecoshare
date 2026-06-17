@@ -161,12 +161,15 @@ export function initAuth(showToast) {
         // Hide pending approval page
         if (pendingApprovalContainer) pendingApprovalContainer.style.display = 'none';
 
-        // Show/hide admin sidebar nav
+        // Show/hide admin sidebar nav and mobile admin bottom nav link
+        const mobileNavAdmin = document.getElementById('mobileNavAdmin');
         if (navAdminItem) {
           if (user.role === 'admin') {
             navAdminItem.style.display = 'block';
+            if (mobileNavAdmin) mobileNavAdmin.style.display = 'flex';
           } else {
             navAdminItem.style.display = 'none';
+            if (mobileNavAdmin) mobileNavAdmin.style.display = 'none';
             if (window.location.hash === '#admin') {
               window.location.hash = '#dashboard';
             }
@@ -196,6 +199,8 @@ export function initAuth(showToast) {
         authContainer.classList.remove('active');
         sidebarUserWidget.style.display = 'none';
         if (navAdminItem) navAdminItem.style.display = 'none';
+        const mobileNavAdmin = document.getElementById('mobileNavAdmin');
+        if (mobileNavAdmin) mobileNavAdmin.style.display = 'none';
 
         if (pendingApprovalContainer) {
           pendingApprovalContainer.style.display = 'flex';
@@ -233,6 +238,8 @@ export function initAuth(showToast) {
       // User is logged out
       if (pendingApprovalContainer) pendingApprovalContainer.style.display = 'none';
       if (navAdminItem) navAdminItem.style.display = 'none';
+      const mobileNavAdmin = document.getElementById('mobileNavAdmin');
+      if (mobileNavAdmin) mobileNavAdmin.style.display = 'none';
 
       authContainer.classList.add('active');
       sidebarUserWidget.style.display = 'none';

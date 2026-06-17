@@ -57,8 +57,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initResources(showToast);
   initChats(showToast);
 
-  // 2. Client Side Routing (Sidebar nav triggers)
-  const navLinks = document.querySelectorAll('.nav-link');
+  // 2. Client Side Routing (Sidebar & Mobile bottom nav triggers)
+  const navLinks = document.querySelectorAll('.nav-link, .mobile-nav-item');
   const sections = document.querySelectorAll('.content-section');
 
   function handleRoute(hash) {
@@ -84,10 +84,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (targetSection) {
       targetSection.classList.add('active');
       
-      const activeLink = document.querySelector(`.nav-link[href="#${targetId}"]`);
-      if (activeLink) {
-        activeLink.classList.add('active');
-      }
+      const activeLinks = document.querySelectorAll(`.nav-link[href="#${targetId}"], .mobile-nav-item[href="#${targetId}"]`);
+      activeLinks.forEach(link => link.classList.add('active'));
 
       // If returning to dashboard, trigger resources re-render to lay out Leaflet map if active
       if (targetId === 'dashboard') {
@@ -232,9 +230,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updateThemeIcon(theme) {
     if (!themeToggle) return;
-    if (theme === 'dark') {
-      // Show sun icon for light mode trigger
-      themeToggle.innerHTML = `
+    const isDark = theme === 'dark';
+    const iconHtml = isDark ? `
         <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
           <circle cx="12" cy="12" r="5"></circle>
           <line x1="12" y1="1" x2="12" y2="3"></line>
@@ -246,14 +243,59 @@ document.addEventListener('DOMContentLoaded', () => {
           <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
           <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
         </svg>
-      `;
-    } else {
-      // Show moon icon for dark mode trigger
-      themeToggle.innerHTML = `
+    ` : `
         <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
         </svg>
-      `;
+    `;
+    
+    themeToggle.innerHTML = iconHtml;
+    const mobileThemeToggle = document.getElementById('mobileThemeToggle');
+    if (mobileThemeToggle) {
+      mobileThemeToggle.innerHTML = iconHtml;
     }
   }
+  // Mobile responsive controls
+  function initMobileNav() {
+    const isMobile = window.innerWidth <= 768;
+    const mobileTopBar = document.getElementById('mobileTopBar');
+    const mobileBottomNav = document.getElementById('mobileBottomNav');
+    if (!mobileTopBar) return;
+    
+    // Show/hide based on screen size
+    mobileTopBar.style.display = isMobile ? 'flex' : 'none';
+    mobileBottomNav.style.display = isMobile ? 'flex' : 'none';
+    
+    // Wire mobile logout to existing logout handler
+    const mobileLogoutBtn = document.getElementById('mobileLogoutBtn');
+    const desktopLogoutBtn = document.getElementById('logoutBtn');
+    if (mobileLogoutBtn && desktopLogoutBtn) {
+      mobileLogoutBtn.onclick = (e) => {
+        e.preventDefault();
+        desktopLogoutBtn.click();
+      };
+    }
+    
+    // Wire mobile theme toggle to desktop toggle
+    const mobileThemeToggle = document.getElementById('mobileThemeToggle');
+    const desktopThemeToggle = document.getElementById('themeToggle');
+    if (mobileThemeToggle && desktopThemeToggle) {
+      mobileThemeToggle.onclick = (e) => {
+        e.preventDefault();
+        desktopThemeToggle.click();
+      };
+    }
+
+    // Wire mobile share button to existing desktop addResourceBtn click handler
+    const mobileShareBtn = document.getElementById('mobileNavShare');
+    const desktopAddBtn = document.getElementById('addResourceBtn');
+    if (mobileShareBtn && desktopAddBtn) {
+      mobileShareBtn.onclick = (e) => {
+        e.preventDefault();
+        desktopAddBtn.click();
+      };
+    }
+  }
+  initMobileNav();
+  window.addEventListener('resize', initMobileNav);
 });

@@ -29,8 +29,7 @@ jobs:
 
     - name: Start Local HTTP Server
       run: |
-        npm install -g http-server
-        npx http-server -p 3000 -c-1 &
+        python -m http.server 3000 &
         sleep 3
 
     - name: Execute Automated Selenium Test Suite

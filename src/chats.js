@@ -1,4 +1,4 @@
-// Chat module controller for EcoShare
+﻿// Chat module controller for EcoCircle
 import { dbService, authService } from './firebase-config.js';
 import { getLoggedInUser } from './auth.js';
 

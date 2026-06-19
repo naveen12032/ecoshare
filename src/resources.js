@@ -1,4 +1,4 @@
-// Resource management module for EcoShare
+﻿// Resource management module for EcoCircle
 import { dbService, storageService, authService } from './firebase-config.js';
 import { getLoggedInUser } from './auth.js';
 import { initMainMap, updateMainMapMarkers, initFormMapPicker } from './map.js';
@@ -914,7 +914,7 @@ function openUserProfileModal(ownerId, ownerName) {
   }
 
   // Find location
-  let ownerLocation = 'EcoShare Community';
+  let ownerLocation = 'EcoCircle Community';
   if (ownerResources.length > 0) {
     ownerLocation = ownerResources[0].location;
   }

@@ -1,8 +1,15 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+const { createClient } = window.supabase;
 
 let supabaseClient = null;
 let authStateUnsubscribe = null;
 let authListeners = [];
+let currentUserProfile = null; // module-level cached profile for sync access
+
+function checkIsAdmin(email) {
+  if (!email) return false;
+  const normalized = email.toLowerCase().trim().replace(/\+[^@]*@/, '@');
+  return normalized === 'admin@gmail.com' || normalized === 'admin@ecocircle.com' || normalized === 'ashrithap2200.sse@saveetha.com';
+}
 
 export function initializeSupabaseInstance(url, anonKey) {
   supabaseClient = createClient(url, anonKey);
@@ -30,57 +37,73 @@ function setupAuthSync() {
       return;
     }
 
-    // Check users table for profile
+    // 1. Immediately notify listeners from cache so UI unlocks right away
+    const cached = localStorage.getItem(`EcoCircle_profile_${user.id}`);
+    if (cached) {
+      try { notifyAuthListeners(JSON.parse(cached)); } catch (_) {}
+    }
+
+    // 2. Then sync with DB in background (non-blocking)
     try {
-      let { data: profile, error } = await supabaseClient
+      const dbPromise = supabaseClient
         .from('users')
         .select('*')
         .eq('uid', user.id)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code === 'PGRST116') {
-        // User doc doesn't exist, create it
-        const isAdmin = (user.email || '').toLowerCase() === 'admin@gmail.com' || (user.email || '').toLowerCase() === 'admin@ecoshare.com';
-        const activeSessionId = 'sess_' + Math.random().toString(36).substring(2, 15) + '_' + Date.now();
-        
-        const newProfile = {
-          uid: user.id,
-          email: user.email,
-          displayName: user.user_metadata?.displayName || user.user_metadata?.full_name || 'EcoShare Member',
-          location: user.user_metadata?.location || 'Community Center',
-          role: isAdmin ? 'admin' : 'resident',
-          approved: isAdmin ? true : false,
-          status: isAdmin ? 'approved' : 'pending',
-          savedResources: [],
-          activeSessionId,
-          createdAt: new Date().toISOString()
-        };
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('DB sync timeout')), 8000)
+      );
 
-        const { error: insertErr } = await supabaseClient
-          .from('users')
-          .insert([newProfile]);
-        
-        if (!insertErr) {
-          profile = newProfile;
+      const { data: profile, error } = await Promise.race([dbPromise, timeoutPromise]);
+
+      if (error) {
+        console.warn('setupAuthSync: DB error:', error);
+        // If no cache, build minimal profile from auth data
+        if (!cached) {
+          const isAdmin = checkIsAdmin(user.email);
+          const fallback = {
+            uid: user.id, email: user.email,
+            displayName: user.user_metadata?.displayName || 'EcoCircle Member',
+            location: 'Community Center',
+            role: isAdmin ? 'admin' : 'resident',
+            approved: isAdmin, status: isAdmin ? 'approved' : 'pending',
+            savedResources: [], activeSessionId: null, createdAt: new Date().toISOString()
+          };
+          notifyAuthListeners(fallback);
         }
+        return;
       }
 
       if (profile) {
-        localStorage.setItem(`ecoshare_profile_${user.id}`, JSON.stringify(profile));
+        localStorage.setItem(`EcoCircle_profile_${user.id}`, JSON.stringify(profile));
         notifyAuthListeners({
-          uid: user.id,
-          email: user.email,
-          displayName: profile.displayName,
-          location: profile.location,
-          role: profile.role,
-          approved: profile.approved,
-          status: profile.status,
-          savedResources: profile.savedResources || [],
-          activeSessionId: profile.activeSessionId
+          uid: user.id, email: user.email,
+          displayName: profile.displayName, location: profile.location,
+          role: profile.role, approved: profile.approved, status: profile.status,
+          savedResources: profile.savedResources || [], activeSessionId: profile.activeSessionId
         });
+      } else {
+        // Profile missing — create it
+        const isAdmin = checkIsAdmin(user.email);
+        const activeSessionId = 'sess_' + Math.random().toString(36).substring(2, 15) + '_' + Date.now();
+        const newProfile = {
+          uid: user.id, email: user.email,
+          displayName: user.user_metadata?.displayName || user.user_metadata?.full_name || 'EcoCircle Member',
+          location: user.user_metadata?.location || 'Community Center',
+          role: isAdmin ? 'admin' : 'resident',
+          approved: isAdmin, status: isAdmin ? 'approved' : 'pending',
+          savedResources: [], activeSessionId,
+          createdAt: new Date().toISOString()
+        };
+        // Insert in background
+        supabaseClient.from('users').insert([newProfile]).then(() => {});
+        localStorage.setItem(`EcoCircle_profile_${user.id}`, JSON.stringify(newProfile));
+        if (!cached) notifyAuthListeners(newProfile);
       }
     } catch (err) {
-      console.error('Error syncing auth state with users table:', err);
+      console.warn('setupAuthSync: timeout/error syncing profile:', err);
+      // Already notified from cache above — nothing more to do
     }
   });
 
@@ -88,6 +111,7 @@ function setupAuthSync() {
 }
 
 function notifyAuthListeners(profile) {
+  currentUserProfile = profile; // keep in-memory cache in sync
   authListeners.forEach(callback => {
     try { callback(profile); } catch (e) { console.error(e); }
   });
@@ -97,27 +121,19 @@ export const SupabaseProvider = {
   // --- Auth API ---
 
   getCurrentUser: () => {
+    // Return from in-memory cache (set by setupAuthSync / login / onAuthStateChanged)
+    if (currentUserProfile) return currentUserProfile;
+
+    // Fallback: try localStorage cache keyed by any known session
     if (!supabaseClient) return null;
-    // Get currently active session synchronously
-    const session = supabaseClient.auth.session ? supabaseClient.auth.session() : null; 
-    const user = session?.user || supabaseClient.auth.user?.();
-    if (!user) return null;
-
-    const cached = localStorage.getItem(`ecoshare_profile_${user.id}`);
-    if (cached) {
-      return JSON.parse(cached);
+    // Try to find a cached profile in localStorage
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('EcoCircle_profile_')) {
+        try { return JSON.parse(localStorage.getItem(key)); } catch (_) {}
+      }
     }
-
-    return {
-      uid: user.id,
-      email: user.email,
-      displayName: user.user_metadata?.displayName || 'EcoShare Member',
-      location: 'Community Center',
-      role: 'resident',
-      approved: false,
-      status: 'pending',
-      savedResources: []
-    };
+    return null;
   },
 
   onAuthStateChanged: (callback) => {
@@ -127,14 +143,14 @@ export const SupabaseProvider = {
       supabaseClient.auth.getSession().then(({ data: { session } }) => {
         const user = session?.user;
         if (user) {
-          const cached = localStorage.getItem(`ecoshare_profile_${user.id}`);
+          const cached = localStorage.getItem(`EcoCircle_profile_${user.id}`);
           if (cached) {
             callback(JSON.parse(cached));
           } else {
             callback({
               uid: user.id,
               email: user.email,
-              displayName: user.user_metadata?.displayName || 'EcoShare Member',
+              displayName: user.user_metadata?.displayName || 'EcoCircle Member',
               location: 'Community Center',
               role: 'resident',
               approved: false,
@@ -156,47 +172,73 @@ export const SupabaseProvider = {
   },
 
   login: async (email, password) => {
-    const { data, error } = await supabaseClient.auth.signInWithPassword({
-      email,
-      password
-    });
+    // Race Supabase sign-in against a 15-second timeout
+    const signInPromise = supabaseClient.auth.signInWithPassword({ email, password });
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Sign in timed out. Please check your internet connection and try again.')), 15000)
+    );
+
+    const { data, error } = await Promise.race([signInPromise, timeoutPromise]);
     if (error) throw error;
-    
+
     const user = data.user;
+    if (!user) throw new Error('Login failed: no user returned.');
+
     const activeSessionId = 'sess_' + Math.random().toString(36).substring(2, 15) + '_' + Date.now();
 
-    // Update users table
-    const { data: profile, error: profileError } = await supabaseClient
-      .from('users')
-      .select('*')
-      .eq('uid', user.id)
-      .single();
-
+    // Fetch profile — use maybeSingle() so it never throws on missing row
     let finalProfile;
-    if (profileError && profileError.code === 'PGRST116') {
-      const isAdmin = email.toLowerCase() === 'admin@gmail.com' || email.toLowerCase() === 'admin@ecoshare.com';
+    try {
+      const { data: profile, error: profileError } = await Promise.race([
+        supabaseClient.from('users').select('*').eq('uid', user.id).maybeSingle(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('DB timeout')), 8000))
+      ]);
+
+      if (profileError) {
+        console.warn('Login: profile fetch error:', profileError);
+      }
+
+      if (profile) {
+        finalProfile = { ...profile, activeSessionId };
+        // Update session ID in background — don't await to avoid blocking
+        supabaseClient.from('users').update({ activeSessionId }).eq('uid', user.id).then(() => {});
+      } else {
+        // Profile missing — create it
+        const isAdmin = checkIsAdmin(email);
+        finalProfile = {
+          uid: user.id,
+          email: user.email,
+          displayName: user.user_metadata?.displayName || user.user_metadata?.full_name || 'EcoCircle Member',
+          location: user.user_metadata?.location || 'Community Center',
+          role: isAdmin ? 'admin' : 'resident',
+          approved: isAdmin,
+          status: isAdmin ? 'approved' : 'pending',
+          savedResources: [],
+          activeSessionId,
+          createdAt: new Date().toISOString()
+        };
+        supabaseClient.from('users').insert([finalProfile]).then(() => {});
+      }
+    } catch (dbErr) {
+      // DB call failed/timed out — build a minimal profile from auth data so login still succeeds
+      console.warn('Login: DB error, using auth-only profile:', dbErr);
+      const isAdmin = checkIsAdmin(email);
       finalProfile = {
         uid: user.id,
         email: user.email,
-        displayName: user.user_metadata?.displayName || 'EcoShare Member',
+        displayName: user.user_metadata?.displayName || 'EcoCircle Member',
         location: 'Community Center',
         role: isAdmin ? 'admin' : 'resident',
-        approved: isAdmin ? true : false,
+        approved: isAdmin,
         status: isAdmin ? 'approved' : 'pending',
         savedResources: [],
         activeSessionId,
         createdAt: new Date().toISOString()
       };
-      await supabaseClient.from('users').insert([finalProfile]);
-    } else if (profile) {
-      finalProfile = {
-        ...profile,
-        activeSessionId
-      };
-      await supabaseClient.from('users').update({ activeSessionId }).eq('uid', user.id);
     }
 
-    localStorage.setItem(`ecoshare_profile_${user.id}`, JSON.stringify(finalProfile));
+    localStorage.setItem(`EcoCircle_profile_${user.id}`, JSON.stringify(finalProfile));
+    currentUserProfile = finalProfile; // update in-memory cache immediately
     return finalProfile;
   },
 
@@ -215,12 +257,7 @@ export const SupabaseProvider = {
 
     const user = data.user;
 
-    // If confirmation is required, session is null
-    if (!data.session) {
-      throw new Error("Email verification is enabled in Supabase. Please toggle OFF 'Confirm email' under Authentication -> Providers -> Email in your Supabase Dashboard to register without OTP.");
-    }
-
-    const isAdmin = email.toLowerCase() === 'admin@gmail.com' || email.toLowerCase() === 'admin@ecoshare.com';
+    const isAdmin = checkIsAdmin(email);
     const activeSessionId = 'sess_' + Math.random().toString(36).substring(2, 15) + '_' + Date.now();
 
     const profile = {
@@ -232,18 +269,23 @@ export const SupabaseProvider = {
       approved: isAdmin ? true : false,
       status: isAdmin ? 'approved' : 'pending',
       savedResources: [],
-      activeSessionId,
+      activeSessionId: data.session ? activeSessionId : null,
       createdAt: new Date().toISOString()
     };
 
     const { error: insertErr } = await supabaseClient.from('users').insert([profile]);
     if (insertErr) console.error("Error inserting user into DB table:", insertErr);
 
-    localStorage.setItem(`ecoshare_profile_${user.id}`, JSON.stringify(profile));
-    return profile;
+    if (data.session) {
+      localStorage.setItem(`EcoCircle_profile_${user.id}`, JSON.stringify(profile));
+      return profile;
+    } else {
+      return { verificationRequired: true, email };
+    }
   },
 
   logout: async () => {
+    currentUserProfile = null; // clear in-memory cache
     const { error } = await supabaseClient.auth.signOut();
     if (error) throw error;
   },
@@ -281,31 +323,114 @@ export const SupabaseProvider = {
     };
   },
 
+  /**
+   * Ensures the current user has a row in the public `users` table.
+   * Silently upserts if missing, preventing foreign-key violations from resources.
+   */
+  ensureUserProfile: async () => {
+    if (!supabaseClient) return;
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      const user = session?.user;
+      if (!user) return;
+
+      // Check if profile already exists
+      const { data: existing, error: fetchErr } = await supabaseClient
+        .from('users')
+        .select('uid')
+        .eq('uid', user.id)
+        .maybeSingle();
+
+      if (fetchErr) { console.warn('ensureUserProfile: fetch error', fetchErr); return; }
+      if (existing) return; // already there
+
+      // Create missing profile
+      const isAdmin = checkIsAdmin(user.email);
+      const activeSessionId = 'sess_' + Math.random().toString(36).substring(2, 15) + '_' + Date.now();
+      const profile = {
+        uid: user.id,
+        email: user.email,
+        displayName: user.user_metadata?.displayName || user.user_metadata?.full_name || 'EcoCircle Member',
+        location: user.user_metadata?.location || 'Community Center',
+        role: isAdmin ? 'admin' : 'resident',
+        approved: isAdmin ? true : false,
+        status: isAdmin ? 'approved' : 'pending',
+        savedResources: [],
+        activeSessionId,
+        createdAt: new Date().toISOString()
+      };
+      const { error: insertErr } = await supabaseClient.from('users').insert([profile]);
+      if (insertErr) {
+        console.warn('ensureUserProfile: insert error', insertErr);
+      } else {
+        localStorage.setItem(`EcoCircle_profile_${user.id}`, JSON.stringify(profile));
+        console.log('[EcoCircle] Auto-created missing user profile for', user.email);
+      }
+    } catch (e) {
+      console.warn('ensureUserProfile: unexpected error', e);
+    }
+  },
+
   addResource: async (resourceData) => {
     const user = SupabaseProvider.getCurrentUser();
+    if (!user) throw new Error('You must be signed in to add a resource.');
+
     const lat = resourceData.latitude !== undefined && resourceData.latitude !== null ? Number(resourceData.latitude) : 45.5152 + (Math.random() - 0.5) * 0.03;
     const lng = resourceData.longitude !== undefined && resourceData.longitude !== null ? Number(resourceData.longitude) : -122.6784 + (Math.random() - 0.5) * 0.03;
 
     const newResource = {
-      ownerId: user ? user.uid : 'anonymous',
-      ownerName: user ? user.displayName : 'Anonymous Resident',
+      resourceId: Math.floor(Date.now() % 2000000000),
+      ownerId: user.uid,
+      ownerName: user.displayName || 'EcoCircle Member',
       title: resourceData.title,
       description: resourceData.description,
       category: resourceData.category,
       quantity: resourceData.quantity || '1',
       imageUrl: resourceData.imageUrl || '',
-      location: resourceData.location || (user ? user.location : 'Community Center'),
+      location: resourceData.location || user.location || 'Community Center',
       latitude: lat,
       longitude: lng,
       createdAt: new Date().toISOString(),
       status: 'Available'
     };
 
-    const { data, error } = await supabaseClient
+    // First attempt
+    let { data, error } = await supabaseClient
       .from('resources')
       .insert([newResource])
       .select()
       .single();
+
+    // If FK violation — auto-create profile and retry once
+    if (error && (error.code === '23503' || (error.message && error.message.includes('foreign key')))) {
+      console.warn('[EcoCircle] FK error on resources insert — auto-creating user profile and retrying...');
+      const isAdmin = checkIsAdmin(user.email);
+      const activeSessionId = 'sess_' + Math.random().toString(36).substring(2, 15) + '_' + Date.now();
+      const profile = {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName || 'EcoCircle Member',
+        location: user.location || 'Community Center',
+        role: isAdmin ? 'admin' : 'resident',
+        approved: isAdmin,
+        status: isAdmin ? 'approved' : 'pending',
+        savedResources: [],
+        activeSessionId,
+        createdAt: new Date().toISOString()
+      };
+      // Insert user profile (ignore conflict if already exists)
+      await supabaseClient.from('users').upsert([profile], { onConflict: 'uid' });
+      localStorage.setItem(`EcoCircle_profile_${user.uid}`, JSON.stringify(profile));
+
+      // Retry resource insert
+      const retry = await supabaseClient
+        .from('resources')
+        .insert([{ ...newResource, resourceId: Math.floor(Date.now() % 2000000000) }])
+        .select()
+        .single();
+      data = retry.data;
+      error = retry.error;
+    }
 
     if (error) throw error;
     return data;
@@ -342,7 +467,7 @@ export const SupabaseProvider = {
 
   // Bookmarking System
   saveResource: async (userId, resourceId) => {
-    const cached = localStorage.getItem(`ecoshare_profile_${userId}`);
+    const cached = localStorage.getItem(`EcoCircle_profile_${userId}`);
     let savedList = [];
     if (cached) {
       const profile = JSON.parse(cached);
@@ -350,7 +475,7 @@ export const SupabaseProvider = {
       if (!savedList.includes(resourceId)) {
         savedList.push(resourceId);
         profile.savedResources = savedList;
-        localStorage.setItem(`ecoshare_profile_${userId}`, JSON.stringify(profile));
+        localStorage.setItem(`EcoCircle_profile_${userId}`, JSON.stringify(profile));
       }
     }
 
@@ -363,13 +488,13 @@ export const SupabaseProvider = {
   },
 
   unsaveResource: async (userId, resourceId) => {
-    const cached = localStorage.getItem(`ecoshare_profile_${userId}`);
+    const cached = localStorage.getItem(`EcoCircle_profile_${userId}`);
     let savedList = [];
     if (cached) {
       const profile = JSON.parse(cached);
       savedList = (profile.savedResources || []).filter(id => id !== resourceId);
       profile.savedResources = savedList;
-      localStorage.setItem(`ecoshare_profile_${userId}`, JSON.stringify(profile));
+      localStorage.setItem(`EcoCircle_profile_${userId}`, JSON.stringify(profile));
     }
 
     const { error } = await supabaseClient
@@ -533,12 +658,13 @@ export const SupabaseProvider = {
 
   sendMessage: async (chatId, messageText) => {
     const user = SupabaseProvider.getCurrentUser();
-    if (!user) return;
+    if (!user) throw new Error('You must be signed in to send a message.');
 
     const newMessage = {
+      messageId: Math.floor(Date.now() % 2000000000),
       chatId,
       senderId: user.uid,
-      senderName: user.displayName,
+      senderName: user.displayName || 'EcoCircle Member',
       content: messageText,
       createdAt: new Date().toISOString()
     };
@@ -546,16 +672,17 @@ export const SupabaseProvider = {
     const { error: msgErr } = await supabaseClient.from('messages').insert([newMessage]);
     if (msgErr) throw msgErr;
 
-    // Update parent chat metadata
-    await supabaseClient
+    // Update parent chat metadata (non-blocking)
+    supabaseClient
       .from('chats')
       .update({
         lastMessage: messageText,
         lastMessageAt: newMessage.createdAt,
         lastMessageSenderId: user.uid,
-        lastMessageSenderName: user.displayName
+        lastMessageSenderName: user.displayName || 'EcoCircle Member'
       })
-      .eq('chatId', chatId);
+      .eq('chatId', chatId)
+      .then(() => {});
   },
 
   getAllUsers: async () => {
@@ -580,7 +707,7 @@ export const SupabaseProvider = {
     if (user && user.uid === userId) {
       user.approved = approved;
       user.status = status;
-      localStorage.setItem(`ecoshare_profile_${userId}`, JSON.stringify(user));
+      localStorage.setItem(`EcoCircle_profile_${userId}`, JSON.stringify(user));
     }
   },
 
@@ -679,11 +806,11 @@ export const SupabaseProvider = {
 
     let finalProfile;
     if (profileError && profileError.code === 'PGRST116') {
-      const isAdmin = email.toLowerCase() === 'admin@gmail.com' || email.toLowerCase() === 'admin@ecoshare.com';
+      const isAdmin = checkIsAdmin(email);
       finalProfile = {
         uid: user.id,
         email: user.email,
-        displayName: user.user_metadata?.displayName || 'EcoShare Member',
+        displayName: user.user_metadata?.displayName || 'EcoCircle Member',
         location: user.user_metadata?.location || 'Community Center',
         role: isAdmin ? 'admin' : 'resident',
         approved: isAdmin ? true : false,
@@ -701,7 +828,7 @@ export const SupabaseProvider = {
       await supabaseClient.from('users').update({ activeSessionId }).eq('uid', user.id);
     }
 
-    localStorage.setItem(`ecoshare_profile_${user.id}`, JSON.stringify(finalProfile));
+    localStorage.setItem(`EcoCircle_profile_${user.id}`, JSON.stringify(finalProfile));
     return finalProfile;
   },
 
@@ -717,12 +844,12 @@ export const SupabaseProvider = {
     if (!user) throw new Error('Verification failed.');
 
     const activeSessionId = 'sess_' + Math.random().toString(36).substring(2, 15) + '_' + Date.now();
-    const isAdmin = email.toLowerCase() === 'admin@gmail.com' || email.toLowerCase() === 'admin@ecoshare.com';
+    const isAdmin = checkIsAdmin(email);
 
     const profile = {
       uid: user.id,
       email,
-      displayName: displayName || user.user_metadata?.displayName || 'EcoShare Member',
+      displayName: displayName || user.user_metadata?.displayName || 'EcoCircle Member',
       location: location || user.user_metadata?.location || 'Community Center',
       role: isAdmin ? 'admin' : 'resident',
       approved: isAdmin ? true : false,
@@ -738,7 +865,7 @@ export const SupabaseProvider = {
       await supabaseClient.from('users').update({ activeSessionId }).eq('uid', user.id);
     }
 
-    localStorage.setItem(`ecoshare_profile_${user.id}`, JSON.stringify(profile));
+    localStorage.setItem(`EcoCircle_profile_${user.id}`, JSON.stringify(profile));
     return profile;
   }
 };

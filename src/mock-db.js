@@ -1,6 +1,12 @@
 // Mock Database emulation layer for Firebase Services using LocalStorage
 // Implements the same wrapper API as the official Firebase integration
 
+function checkIsAdmin(email) {
+  if (!email) return false;
+  const normalized = email.toLowerCase().trim().replace(/\+[^@]*@/, '@');
+  return normalized === 'admin@gmail.com' || normalized === 'admin@ecocircle.com' || normalized === 'ashrithap2200.sse@saveetha.com';
+}
+
 class MockDatabase {
   constructor() {
     this.authListeners = [];
@@ -9,42 +15,42 @@ class MockDatabase {
     this.messageListeners = [];
     
     // Initialize LocalStorage collections if they don't exist
-    if (!localStorage.getItem('ecoshare_users')) {
-      localStorage.setItem('ecoshare_users', JSON.stringify([]));
+    if (!localStorage.getItem('EcoCircle_users')) {
+      localStorage.setItem('EcoCircle_users', JSON.stringify([]));
     }
     
     // Clear out any old seed data/fake users
     let resources = [];
     try {
-      const stored = localStorage.getItem('ecoshare_resources');
+      const stored = localStorage.getItem('EcoCircle_resources');
       if (stored) {
         resources = JSON.parse(stored).filter(r => r.resourceId && !r.resourceId.startsWith('seed_'));
       }
     } catch (e) {
       console.error(e);
     }
-    localStorage.setItem('ecoshare_resources', JSON.stringify(resources));
+    localStorage.setItem('EcoCircle_resources', JSON.stringify(resources));
 
-    if (!localStorage.getItem('ecoshare_chats')) {
-      localStorage.setItem('ecoshare_chats', JSON.stringify([]));
+    if (!localStorage.getItem('EcoCircle_chats')) {
+      localStorage.setItem('EcoCircle_chats', JSON.stringify([]));
     }
 
-    if (!localStorage.getItem('ecoshare_messages')) {
-      localStorage.setItem('ecoshare_messages', JSON.stringify([]));
+    if (!localStorage.getItem('EcoCircle_messages')) {
+      localStorage.setItem('EcoCircle_messages', JSON.stringify([]));
     }
     
     // Listen for storage events (allows real-time synchronization between tabs!)
     window.addEventListener('storage', (e) => {
-      if (e.key === 'ecoshare_resources') {
+      if (e.key === 'EcoCircle_resources') {
         this.notifyResourceListeners();
       }
-      if (e.key === 'ecoshare_session' || e.key === 'ecoshare_users') {
+      if (e.key === 'EcoCircle_session' || e.key === 'EcoCircle_users') {
         this.notifyAuthListeners();
       }
-      if (e.key === 'ecoshare_chats') {
+      if (e.key === 'EcoCircle_chats') {
         this.notifyChatListeners();
       }
-      if (e.key === 'ecoshare_messages') {
+      if (e.key === 'EcoCircle_messages') {
         this.notifyMessageListeners();
       }
     });
@@ -53,11 +59,11 @@ class MockDatabase {
   // --- Auth Service Implementation ---
   
   getCurrentUser() {
-    const session = localStorage.getItem('ecoshare_session');
+    const session = localStorage.getItem('EcoCircle_session');
     if (!session) return null;
     const sessionUser = JSON.parse(session);
-    // Find the latest user details from ecoshare_users to get real-time role/approval updates
-    const users = JSON.parse(localStorage.getItem('ecoshare_users') || '[]');
+    // Find the latest user details from EcoCircle_users to get real-time role/approval updates
+    const users = JSON.parse(localStorage.getItem('EcoCircle_users') || '[]');
     const latestUser = users.find(u => u.uid === sessionUser.uid);
     if (latestUser) {
       return {
@@ -100,14 +106,14 @@ class MockDatabase {
   register(email, password, displayName, location) {
     return new Promise((resolve, reject) => {
       setTimeout(() => {
-        const users = JSON.parse(localStorage.getItem('ecoshare_users') || '[]');
+        const users = JSON.parse(localStorage.getItem('EcoCircle_users') || '[]');
         
         if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
           return reject(new Error('An account with this email already exists.'));
         }
         
         const activeSessionId = 'sess_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
-        const isAdmin = email.toLowerCase() === 'admin@gmail.com' || email.toLowerCase() === 'admin@ecoshare.com';
+        const isAdmin = checkIsAdmin(email);
 
         const sessionUser = {
           uid: 'mock_uid_' + Math.random().toString(36).substr(2, 9),
@@ -123,8 +129,8 @@ class MockDatabase {
         };
 
         users.push({ ...sessionUser, password });
-        localStorage.setItem('ecoshare_users', JSON.stringify(users));
-        localStorage.setItem('ecoshare_session', JSON.stringify(sessionUser));
+        localStorage.setItem('EcoCircle_users', JSON.stringify(users));
+        localStorage.setItem('EcoCircle_session', JSON.stringify(sessionUser));
         this.notifyAuthListeners();
         resolve(sessionUser);
       }, 500);
@@ -135,7 +141,7 @@ class MockDatabase {
   login(email, password) {
     return new Promise((resolve, reject) => {
       setTimeout(() => {
-        const users = JSON.parse(localStorage.getItem('ecoshare_users') || '[]');
+        const users = JSON.parse(localStorage.getItem('EcoCircle_users') || '[]');
         const userIndex = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
         
         if (userIndex === -1 || users[userIndex].password !== password) {
@@ -144,7 +150,7 @@ class MockDatabase {
         
         const activeSessionId = 'sess_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
         users[userIndex].activeSessionId = activeSessionId;
-        localStorage.setItem('ecoshare_users', JSON.stringify(users));
+        localStorage.setItem('EcoCircle_users', JSON.stringify(users));
         
         const sessionUser = {
           uid: users[userIndex].uid,
@@ -159,7 +165,7 @@ class MockDatabase {
           createdAt: users[userIndex].createdAt
         };
         
-        localStorage.setItem('ecoshare_session', JSON.stringify(sessionUser));
+        localStorage.setItem('EcoCircle_session', JSON.stringify(sessionUser));
         this.notifyAuthListeners();
         
         resolve(sessionUser);
@@ -169,7 +175,7 @@ class MockDatabase {
   
   logout() {
     return new Promise((resolve) => {
-      localStorage.removeItem('ecoshare_session');
+      localStorage.removeItem('EcoCircle_session');
       this.notifyAuthListeners();
       resolve();
     });
@@ -178,11 +184,11 @@ class MockDatabase {
   // --- Firestore Service Implementation ---
   
   getResources() {
-    return JSON.parse(localStorage.getItem('ecoshare_resources') || '[]');
+    return JSON.parse(localStorage.getItem('EcoCircle_resources') || '[]');
   }
   
   saveResources(resources) {
-    localStorage.setItem('ecoshare_resources', JSON.stringify(resources));
+    localStorage.setItem('EcoCircle_resources', JSON.stringify(resources));
     this.notifyResourceListeners();
   }
   
@@ -302,7 +308,7 @@ class MockDatabase {
   // Bookmarking System
   saveResource(userId, resourceId) {
     return new Promise((resolve, reject) => {
-      const users = JSON.parse(localStorage.getItem('ecoshare_users') || '[]');
+      const users = JSON.parse(localStorage.getItem('EcoCircle_users') || '[]');
       const userIndex = users.findIndex(u => u.uid === userId);
       
       if (userIndex === -1) return reject(new Error('User not found'));
@@ -313,13 +319,13 @@ class MockDatabase {
       
       if (!users[userIndex].savedResources.includes(resourceId)) {
         users[userIndex].savedResources.push(resourceId);
-        localStorage.setItem('ecoshare_users', JSON.stringify(users));
+        localStorage.setItem('EcoCircle_users', JSON.stringify(users));
         
         // Update current session if matching
         const session = this.getCurrentUser();
         if (session && session.uid === userId) {
           session.savedResources = users[userIndex].savedResources;
-          localStorage.setItem('ecoshare_session', JSON.stringify(session));
+          localStorage.setItem('EcoCircle_session', JSON.stringify(session));
           this.notifyAuthListeners();
         }
       }
@@ -329,20 +335,20 @@ class MockDatabase {
   
   unsaveResource(userId, resourceId) {
     return new Promise((resolve, reject) => {
-      const users = JSON.parse(localStorage.getItem('ecoshare_users') || '[]');
+      const users = JSON.parse(localStorage.getItem('EcoCircle_users') || '[]');
       const userIndex = users.findIndex(u => u.uid === userId);
       
       if (userIndex === -1) return reject(new Error('User not found'));
       
       if (users[userIndex].savedResources) {
         users[userIndex].savedResources = users[userIndex].savedResources.filter(id => id !== resourceId);
-        localStorage.setItem('ecoshare_users', JSON.stringify(users));
+        localStorage.setItem('EcoCircle_users', JSON.stringify(users));
         
         // Update session
         const session = this.getCurrentUser();
         if (session && session.uid === userId) {
           session.savedResources = users[userIndex].savedResources;
-          localStorage.setItem('ecoshare_session', JSON.stringify(session));
+          localStorage.setItem('EcoCircle_session', JSON.stringify(session));
           this.notifyAuthListeners();
         }
       }
@@ -355,7 +361,7 @@ class MockDatabase {
     if (session && session.uid === userId) {
       return Promise.resolve(session.savedResources || []);
     }
-    const users = JSON.parse(localStorage.getItem('ecoshare_users') || '[]');
+    const users = JSON.parse(localStorage.getItem('EcoCircle_users') || '[]');
     const user = users.find(u => u.uid === userId);
     return Promise.resolve(user ? (user.savedResources || []) : []);
   }
@@ -363,7 +369,7 @@ class MockDatabase {
   // --- Chat Service Implementation ---
 
   getChats() {
-    let chats = JSON.parse(localStorage.getItem('ecoshare_chats') || '[]');
+    let chats = JSON.parse(localStorage.getItem('EcoCircle_chats') || '[]');
     let lobby = chats.find(c => c.chatId === 'general_lobby');
     if (!lobby) {
       lobby = {
@@ -376,13 +382,13 @@ class MockDatabase {
         lastMessageAt: new Date(0).toISOString()
       };
       chats.unshift(lobby);
-      localStorage.setItem('ecoshare_chats', JSON.stringify(chats));
+      localStorage.setItem('EcoCircle_chats', JSON.stringify(chats));
     }
     return chats;
   }
 
   getMessages() {
-    return JSON.parse(localStorage.getItem('ecoshare_messages') || '[]');
+    return JSON.parse(localStorage.getItem('EcoCircle_messages') || '[]');
   }
 
   notifyChatListeners() {
@@ -475,7 +481,7 @@ class MockDatabase {
           lastMessageAt: new Date().toISOString()
         };
         chats.unshift(chat);
-        localStorage.setItem('ecoshare_chats', JSON.stringify(chats));
+        localStorage.setItem('EcoCircle_chats', JSON.stringify(chats));
         this.notifyChatListeners();
       }
       resolve(chat);
@@ -498,7 +504,7 @@ class MockDatabase {
       };
 
       messages.push(message);
-      localStorage.setItem('ecoshare_messages', JSON.stringify(messages));
+      localStorage.setItem('EcoCircle_messages', JSON.stringify(messages));
 
       // Update last message in the parent chat
       const chats = this.getChats();
@@ -511,7 +517,7 @@ class MockDatabase {
         // Move to top
         const updatedChat = chats.splice(chatIndex, 1)[0];
         chats.unshift(updatedChat);
-        localStorage.setItem('ecoshare_chats', JSON.stringify(chats));
+        localStorage.setItem('EcoCircle_chats', JSON.stringify(chats));
       }
 
       this.notifyMessageListeners();
@@ -618,7 +624,7 @@ class MockDatabase {
       }
     ];
     
-    localStorage.setItem('ecoshare_resources', JSON.stringify(seeds));
+    localStorage.setItem('EcoCircle_resources', JSON.stringify(seeds));
   }
   
   getDefaultCategoryBanner(category) {
@@ -639,7 +645,7 @@ class MockDatabase {
 
   getAllUsers() {
     return new Promise((resolve) => {
-      const users = JSON.parse(localStorage.getItem('ecoshare_users') || '[]');
+      const users = JSON.parse(localStorage.getItem('EcoCircle_users') || '[]');
       const sanitized = users.map(u => ({
         uid: u.uid,
         email: u.email,
@@ -657,21 +663,21 @@ class MockDatabase {
 
   updateUserApproval(userId, approved, status) {
     return new Promise((resolve) => {
-      const users = JSON.parse(localStorage.getItem('ecoshare_users') || '[]');
+      const users = JSON.parse(localStorage.getItem('EcoCircle_users') || '[]');
       const userIndex = users.findIndex(u => u.uid === userId);
       if (userIndex !== -1) {
         users[userIndex].approved = approved;
         users[userIndex].status = status;
-        localStorage.setItem('ecoshare_users', JSON.stringify(users));
+        localStorage.setItem('EcoCircle_users', JSON.stringify(users));
 
         // Sync active session if it is this user
-        const session = localStorage.getItem('ecoshare_session');
+        const session = localStorage.getItem('EcoCircle_session');
         if (session) {
           const sessionUser = JSON.parse(session);
           if (sessionUser.uid === userId) {
             sessionUser.approved = approved;
             sessionUser.status = status;
-            localStorage.setItem('ecoshare_session', JSON.stringify(sessionUser));
+            localStorage.setItem('EcoCircle_session', JSON.stringify(sessionUser));
           }
         }
         this.notifyAuthListeners();
@@ -684,7 +690,7 @@ class MockDatabase {
     return new Promise((resolve) => {
       setTimeout(() => {
         const mockCode = '123456';
-        localStorage.setItem(`ecoshare_mock_otp_${email}`, JSON.stringify({
+        localStorage.setItem(`EcoCircle_mock_otp_${email}`, JSON.stringify({
           code: mockCode,
           metadata,
           timestamp: Date.now()
@@ -703,7 +709,7 @@ class MockDatabase {
   verifyOtp(email, token) {
     return new Promise((resolve, reject) => {
       setTimeout(() => {
-        const cached = localStorage.getItem(`ecoshare_mock_otp_${email}`);
+        const cached = localStorage.getItem(`EcoCircle_mock_otp_${email}`);
         if (!cached) return reject(new Error('No OTP request found for this email or code has expired.'));
         
         const { code, metadata } = JSON.parse(cached);
@@ -711,19 +717,19 @@ class MockDatabase {
           return reject(new Error('Invalid verification code. Please try again.'));
         }
         
-        localStorage.removeItem(`ecoshare_mock_otp_${email}`);
+        localStorage.removeItem(`EcoCircle_mock_otp_${email}`);
         
-        const users = JSON.parse(localStorage.getItem('ecoshare_users') || '[]');
+        const users = JSON.parse(localStorage.getItem('EcoCircle_users') || '[]');
         let userIndex = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
         const activeSessionId = 'sess_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
         
         let sessionUser;
         if (userIndex === -1) {
-          const isAdmin = email.toLowerCase() === 'admin@gmail.com' || email.toLowerCase() === 'admin@ecoshare.com';
+          const isAdmin = checkIsAdmin(email);
           sessionUser = {
             uid: 'mock_uid_' + Math.random().toString(36).substr(2, 9),
             email,
-            displayName: metadata.displayName || 'EcoShare Member',
+            displayName: metadata.displayName || 'EcoCircle Member',
             location: metadata.location || 'Community Center',
             role: isAdmin ? 'admin' : 'resident',
             approved: isAdmin ? true : false,
@@ -733,17 +739,17 @@ class MockDatabase {
             createdAt: new Date().toISOString()
           };
           users.push(sessionUser);
-          localStorage.setItem('ecoshare_users', JSON.stringify(users));
+          localStorage.setItem('EcoCircle_users', JSON.stringify(users));
         } else {
           sessionUser = {
             ...users[userIndex],
             activeSessionId
           };
           users[userIndex] = sessionUser;
-          localStorage.setItem('ecoshare_users', JSON.stringify(users));
+          localStorage.setItem('EcoCircle_users', JSON.stringify(users));
         }
         
-        localStorage.setItem('ecoshare_session', JSON.stringify(sessionUser));
+        localStorage.setItem('EcoCircle_session', JSON.stringify(sessionUser));
         this.notifyAuthListeners();
         resolve(sessionUser);
       }, 500);
@@ -753,7 +759,7 @@ class MockDatabase {
   verifySignupOtp(email, token) {
     return new Promise((resolve, reject) => {
       setTimeout(() => {
-        const cached = localStorage.getItem(`ecoshare_mock_verify_${email}`);
+        const cached = localStorage.getItem(`EcoCircle_mock_verify_${email}`);
         if (!cached) return reject(new Error('No registration verification pending for this email.'));
 
         const { code, displayName, location, password } = JSON.parse(cached);
@@ -761,11 +767,11 @@ class MockDatabase {
           return reject(new Error('Invalid verification code. Please try again.'));
         }
 
-        localStorage.removeItem(`ecoshare_mock_verify_${email}`);
+        localStorage.removeItem(`EcoCircle_mock_verify_${email}`);
 
-        const users = JSON.parse(localStorage.getItem('ecoshare_users') || '[]');
+        const users = JSON.parse(localStorage.getItem('EcoCircle_users') || '[]');
         const activeSessionId = 'sess_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
-        const isAdmin = email.toLowerCase() === 'admin@gmail.com' || email.toLowerCase() === 'admin@ecoshare.com';
+        const isAdmin = checkIsAdmin(email);
 
         const sessionUser = {
           uid: 'mock_uid_' + Math.random().toString(36).substr(2, 9),
@@ -781,8 +787,8 @@ class MockDatabase {
         };
 
         users.push({ ...sessionUser, password });
-        localStorage.setItem('ecoshare_users', JSON.stringify(users));
-        localStorage.setItem('ecoshare_session', JSON.stringify(sessionUser));
+        localStorage.setItem('EcoCircle_users', JSON.stringify(users));
+        localStorage.setItem('EcoCircle_session', JSON.stringify(sessionUser));
         this.notifyAuthListeners();
         resolve(sessionUser);
       }, 500);

@@ -9,11 +9,16 @@ android/local.properties
 .gradle/
 build/
 
-# Private environment configurations
+# Private environment configurations — DO NOT COMMIT
+.env
 firebase-config.json
+
+# Auto-generated from .env — DO NOT COMMIT
+src/env-config.js
 
 # IDE config files
 .idea/
 .vscode/
 Thumbs.db
 .DS_Store
+test-api.ps1  

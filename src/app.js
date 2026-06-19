@@ -1,6 +1,7 @@
 import { initAuth } from './auth.js';
 import { initResources, renderResources } from './resources.js';
 import { initChats } from './chats.js';
+import { initAIAssistant } from './ai-assistant.js';
 import { 
   tryInitializeFirebase, 
   tryInitializeSupabase,
@@ -57,6 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initAuth(showToast);
   initResources(showToast);
   initChats(showToast);
+  initAIAssistant(showToast);
 
   // 2. Client Side Routing (Sidebar & Mobile bottom nav triggers)
   const navLinks = document.querySelectorAll('.nav-link, .mobile-nav-item');
@@ -118,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const supabaseConfigFields = document.getElementById('supabaseConfigFields');
 
   // Load existing configurations in inputs if present
-  const savedFirebase = localStorage.getItem('ecoshare_firebase_config');
+  const savedFirebase = localStorage.getItem('EcoCircle_firebase_config');
   if (savedFirebase) {
     try {
       const cfg = JSON.parse(savedFirebase);
@@ -133,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  const savedSupabase = localStorage.getItem('ecoshare_supabase_config');
+  const savedSupabase = localStorage.getItem('EcoCircle_supabase_config');
   if (savedSupabase) {
     try {
       const cfg = JSON.parse(savedSupabase);
@@ -144,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  const savedActiveProvider = localStorage.getItem('ecoshare_active_provider_type') || 'mock';
+  const savedActiveProvider = localStorage.getItem('EcoCircle_active_provider_type') || 'mock';
   if (configProviderSelect) {
     configProviderSelect.value = savedActiveProvider === 'mock' ? 'supabase' : savedActiveProvider;
     updateFieldsVisibility(configProviderSelect.value);
@@ -279,7 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const themeToggle = document.getElementById('themeToggle');
   
   // Set theme from saved settings
-  const savedTheme = localStorage.getItem('ecoshare_theme') || 'light';
+  const savedTheme = localStorage.getItem('EcoCircle_theme') || 'light';
   document.documentElement.setAttribute('data-theme', savedTheme);
   updateThemeIcon(savedTheme);
 
@@ -289,7 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
       
       document.documentElement.setAttribute('data-theme', newTheme);
-      localStorage.setItem('ecoshare_theme', newTheme);
+      localStorage.setItem('EcoCircle_theme', newTheme);
       updateThemeIcon(newTheme);
       showToast(`${newTheme.charAt(0).toUpperCase() + newTheme.slice(1)} mode enabled.`, 'info');
     });

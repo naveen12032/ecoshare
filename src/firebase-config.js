@@ -9,6 +9,12 @@ let firebaseInstance = null;
 let currentProviderName = 'Mock Database';
 let providerChangeListeners = [];
 
+function checkIsAdmin(email) {
+  if (!email) return false;
+  const normalized = email.toLowerCase().trim().replace(/\+[^@]*@/, '@');
+  return normalized === 'admin@gmail.com' || normalized === 'admin@ecocircle.com' || normalized === 'ashrithap2200.sse@saveetha.com';
+}
+
 // Multiplexer tracking for dynamic activeProvider auth listeners
 let authCallbacks = [];
 let activeAuthUnsubscribe = null;
@@ -161,12 +167,12 @@ export async function tryInitializeFirebase(config) {
         const user = auth.currentUser;
         if (!user) return null;
         // In real Firebase we check cached user profile details from localStorage/state
-        const cachedDetails = localStorage.getItem(`ecoshare_profile_${user.uid}`);
+        const cachedDetails = localStorage.getItem(`EcoCircle_profile_${user.uid}`);
         const details = cachedDetails ? JSON.parse(cachedDetails) : { location: 'Community Center', savedResources: [] };
         return {
           uid: user.uid,
           email: user.email,
-          displayName: user.displayName || 'EcoShare Member',
+          displayName: user.displayName || 'EcoCircle Member',
           location: details.location,
           role: details.role || 'resident',
           approved: details.approved !== undefined ? details.approved : (details.role === 'admin'),
@@ -195,12 +201,12 @@ export async function tryInitializeFirebase(config) {
             if (docSnap.exists()) {
               const profile = docSnap.data();
               // Cache profile details locally for synchronous retrieval if needed
-              localStorage.setItem(`ecoshare_profile_${user.uid}`, JSON.stringify(profile));
+              localStorage.setItem(`EcoCircle_profile_${user.uid}`, JSON.stringify(profile));
 
               callback({
                 uid: user.uid,
                 email: user.email,
-                displayName: profile.displayName || user.displayName || 'EcoShare Member',
+                displayName: profile.displayName || user.displayName || 'EcoCircle Member',
                 location: profile.location,
                 role: profile.role || 'resident',
                 approved: profile.approved !== undefined ? profile.approved : (profile.role === 'admin'),
@@ -210,12 +216,12 @@ export async function tryInitializeFirebase(config) {
               });
             } else {
               // Create user doc if it doesn't exist
-              const isAdmin = (user.email || '').toLowerCase() === 'admin@gmail.com' || (user.email || '').toLowerCase() === 'admin@ecoshare.com';
+              const isAdmin = checkIsAdmin(user.email);
               const activeSessionId = 'sess_' + Math.random().toString(36).substring(2, 15) + '_' + Date.now();
               const profile = {
                 uid: user.uid,
                 email: user.email,
-                displayName: user.displayName || 'EcoShare Member',
+                displayName: user.displayName || 'EcoCircle Member',
                 location: 'Community Center',
                 role: isAdmin ? 'admin' : 'resident',
                 approved: isAdmin ? true : false,
@@ -252,18 +258,18 @@ export async function tryInitializeFirebase(config) {
           profile = docSnap.data();
           profile.activeSessionId = activeSessionId; // update session
           if (profile.role === undefined) {
-            const isAdmin = (user.email || '').toLowerCase() === 'admin@gmail.com' || (user.email || '').toLowerCase() === 'admin@ecoshare.com';
+            const isAdmin = checkIsAdmin(user.email);
             profile.role = isAdmin ? 'admin' : 'resident';
             profile.approved = isAdmin ? true : false;
             profile.status = isAdmin ? 'approved' : 'pending';
           }
           await setDoc(docRef, profile, { merge: true });
         } else {
-          const isAdmin = (user.email || '').toLowerCase() === 'admin@gmail.com' || (user.email || '').toLowerCase() === 'admin@ecoshare.com';
+          const isAdmin = checkIsAdmin(user.email);
           profile = {
             uid: user.uid,
             email: user.email,
-            displayName: user.displayName || 'EcoShare Member',
+            displayName: user.displayName || 'EcoCircle Member',
             location: 'Community Center',
             role: isAdmin ? 'admin' : 'resident',
             approved: isAdmin ? true : false,
@@ -275,12 +281,12 @@ export async function tryInitializeFirebase(config) {
           await setDoc(docRef, profile);
         }
         
-        localStorage.setItem(`ecoshare_profile_${user.uid}`, JSON.stringify(profile));
+        localStorage.setItem(`EcoCircle_profile_${user.uid}`, JSON.stringify(profile));
         
         return {
           uid: user.uid,
           email: user.email,
-          displayName: profile.displayName || user.displayName || 'EcoShare Member',
+          displayName: profile.displayName || user.displayName || 'EcoCircle Member',
           location: profile.location,
           role: profile.role,
           approved: profile.approved,
@@ -301,7 +307,7 @@ export async function tryInitializeFirebase(config) {
           console.warn('Failed to update auth profile display name:', e);
         }
 
-        const isAdmin = email.toLowerCase() === 'admin@gmail.com' || email.toLowerCase() === 'admin@ecoshare.com';
+        const isAdmin = checkIsAdmin(email);
         const profile = {
           uid: user.uid,
           email,
@@ -317,7 +323,7 @@ export async function tryInitializeFirebase(config) {
         
         // Save detailed profile to Firestore
         await setDoc(doc(db, 'users', user.uid), profile);
-        localStorage.setItem(`ecoshare_profile_${user.uid}`, JSON.stringify(profile));
+        localStorage.setItem(`EcoCircle_profile_${user.uid}`, JSON.stringify(profile));
         
         return profile;
       },
@@ -343,7 +349,7 @@ export async function tryInitializeFirebase(config) {
 
       addResource: async (resourceData) => {
         const user = auth.currentUser;
-        const profileString = user ? localStorage.getItem(`ecoshare_profile_${user.uid}`) : null;
+        const profileString = user ? localStorage.getItem(`EcoCircle_profile_${user.uid}`) : null;
         const profile = profileString ? JSON.parse(profileString) : null;
         
         const lat = resourceData.latitude !== undefined && resourceData.latitude !== null ? Number(resourceData.latitude) : 45.5152 + (Math.random() - 0.5) * 0.03;
@@ -402,12 +408,12 @@ export async function tryInitializeFirebase(config) {
         });
         
         // Sync cache
-        const cached = localStorage.getItem(`ecoshare_profile_${userId}`);
+        const cached = localStorage.getItem(`EcoCircle_profile_${userId}`);
         if (cached) {
           const profile = JSON.parse(cached);
           if (!profile.savedResources.includes(resourceId)) {
             profile.savedResources.push(resourceId);
-            localStorage.setItem(`ecoshare_profile_${userId}`, JSON.stringify(profile));
+            localStorage.setItem(`EcoCircle_profile_${userId}`, JSON.stringify(profile));
           }
         }
       },
@@ -419,11 +425,11 @@ export async function tryInitializeFirebase(config) {
         });
         
         // Sync cache
-        const cached = localStorage.getItem(`ecoshare_profile_${userId}`);
+        const cached = localStorage.getItem(`EcoCircle_profile_${userId}`);
         if (cached) {
           const profile = JSON.parse(cached);
           profile.savedResources = profile.savedResources.filter(id => id !== resourceId);
-          localStorage.setItem(`ecoshare_profile_${userId}`, JSON.stringify(profile));
+          localStorage.setItem(`EcoCircle_profile_${userId}`, JSON.stringify(profile));
         }
       },
 
@@ -457,13 +463,13 @@ export async function tryInitializeFirebase(config) {
         if (chatDoc) return chatDoc;
 
         // Otherwise create
-        const profileString = localStorage.getItem(`ecoshare_profile_${user.uid}`);
-        const profile = profileString ? JSON.parse(profileString) : { displayName: 'EcoShare Member' };
+        const profileString = localStorage.getItem(`EcoCircle_profile_${user.uid}`);
+        const profile = profileString ? JSON.parse(profileString) : { displayName: 'EcoCircle Member' };
 
         const newChat = {
           participants: [user.uid, participantId],
           participantNames: {
-            [user.uid]: profile.displayName || 'EcoShare Member',
+            [user.uid]: profile.displayName || 'EcoCircle Member',
             [participantId]: participantName || 'Resource Owner'
           },
           resourceId,
@@ -553,12 +559,12 @@ export async function tryInitializeFirebase(config) {
         const user = auth.currentUser;
         if (!user) return;
 
-        const profileString = localStorage.getItem(`ecoshare_profile_${user.uid}`);
-        const profile = profileString ? JSON.parse(profileString) : { displayName: 'EcoShare Member' };
+        const profileString = localStorage.getItem(`EcoCircle_profile_${user.uid}`);
+        const profile = profileString ? JSON.parse(profileString) : { displayName: 'EcoCircle Member' };
 
         const message = {
           senderId: user.uid,
-          senderName: profile.displayName || 'EcoShare Member',
+          senderName: profile.displayName || 'EcoCircle Member',
           content: messageText,
           createdAt: new Date().toISOString()
         };
@@ -568,7 +574,7 @@ export async function tryInitializeFirebase(config) {
           lastMessage: messageText,
           lastMessageAt: message.createdAt,
           lastMessageSenderId: user.uid,
-          lastMessageSenderName: profile.displayName || 'EcoShare Member'
+          lastMessageSenderName: profile.displayName || 'EcoCircle Member'
         }, { merge: true });
       },
 
@@ -591,12 +597,12 @@ export async function tryInitializeFirebase(config) {
         // Also update local cache if it is the current user
         const currentUser = auth.currentUser;
         if (currentUser && currentUser.uid === userId) {
-          const cached = localStorage.getItem(`ecoshare_profile_${userId}`);
+          const cached = localStorage.getItem(`EcoCircle_profile_${userId}`);
           if (cached) {
             const profile = JSON.parse(cached);
             profile.approved = approved;
             profile.status = status;
-            localStorage.setItem(`ecoshare_profile_${userId}`, JSON.stringify(profile));
+            localStorage.setItem(`EcoCircle_profile_${userId}`, JSON.stringify(profile));
           }
         }
       },
@@ -672,8 +678,8 @@ export async function tryInitializeFirebase(config) {
     currentProviderName = 'Live Firebase';
     
     // Cache configuration successfully
-    localStorage.setItem('ecoshare_firebase_config', JSON.stringify(config));
-    localStorage.setItem('ecoshare_active_provider_type', 'firebase');
+    localStorage.setItem('EcoCircle_firebase_config', JSON.stringify(config));
+    localStorage.setItem('EcoCircle_active_provider_type', 'firebase');
     
     syncAuthProviderSubscription();
     notifyProviderChanged();
@@ -702,8 +708,8 @@ export async function tryInitializeSupabase(url, anonKey) {
     currentProviderName = 'Live Supabase';
 
     // Cache configurations
-    localStorage.setItem('ecoshare_supabase_config', JSON.stringify({ supabaseUrl: url, supabaseAnonKey: anonKey }));
-    localStorage.setItem('ecoshare_active_provider_type', 'supabase');
+    localStorage.setItem('EcoCircle_supabase_config', JSON.stringify({ supabaseUrl: url, supabaseAnonKey: anonKey }));
+    localStorage.setItem('EcoCircle_active_provider_type', 'supabase');
 
     syncAuthProviderSubscription();
     notifyProviderChanged();
@@ -720,14 +726,14 @@ function switchToMockMode() {
   activeProvider = mockDb;
   activeProviderType = 'mock';
   currentProviderName = 'Mock Database';
-  localStorage.setItem('ecoshare_active_provider_type', 'mock');
+  localStorage.setItem('EcoCircle_active_provider_type', 'mock');
   syncAuthProviderSubscription();
   notifyProviderChanged();
 }
 
 export function removeCloudConfig() {
-  localStorage.removeItem('ecoshare_firebase_config');
-  localStorage.removeItem('ecoshare_supabase_config');
+  localStorage.removeItem('EcoCircle_firebase_config');
+  localStorage.removeItem('EcoCircle_supabase_config');
   switchToMockMode();
 }
 
@@ -737,7 +743,11 @@ export function removeFirebaseConfig() {
 }
 
 export async function autoInitializeConfig() {
-  const activeType = localStorage.getItem('ecoshare_active_provider_type') || 'mock';
+  let activeType = localStorage.getItem('EcoCircle_active_provider_type');
+  if (!activeType || activeType === 'mock') {
+    activeType = 'supabase';
+    localStorage.setItem('EcoCircle_active_provider_type', 'supabase');
+  }
 
   if (activeType === 'firebase') {
     try {
@@ -754,7 +764,7 @@ export async function autoInitializeConfig() {
       console.log("No firebase-config.json found or failed to fetch. Checking LocalStorage...");
     }
 
-    const savedConfig = localStorage.getItem('ecoshare_firebase_config');
+    const savedConfig = localStorage.getItem('EcoCircle_firebase_config');
     if (savedConfig) {
       try {
         const parsed = JSON.parse(savedConfig);
@@ -765,16 +775,25 @@ export async function autoInitializeConfig() {
       }
     }
   } else if (activeType === 'supabase') {
-    const savedConfig = localStorage.getItem('ecoshare_supabase_config');
+    const savedConfig = localStorage.getItem('EcoCircle_supabase_config');
+    // Read from window.__ENV__ (generated from .env at build time)
+    const envUrl = (window.__ENV__ && window.__ENV__.SUPABASE_URL) || '';
+    const envKey = (window.__ENV__ && window.__ENV__.SUPABASE_ANON_KEY) || '';
+    let supabaseUrl = envUrl;
+    let supabaseAnonKey = envKey;
     if (savedConfig) {
       try {
-        const { supabaseUrl, supabaseAnonKey } = JSON.parse(savedConfig);
-        const success = await tryInitializeSupabase(supabaseUrl, supabaseAnonKey);
-        return success;
+        const parsed = JSON.parse(savedConfig);
+        supabaseUrl = parsed.supabaseUrl || supabaseUrl;
+        supabaseAnonKey = parsed.supabaseAnonKey || supabaseAnonKey;
       } catch (e) {
         console.error("Error loading cached Supabase config:", e);
       }
+    } else {
+      localStorage.setItem('EcoCircle_supabase_config', JSON.stringify({ supabaseUrl, supabaseAnonKey }));
     }
+    const success = await tryInitializeSupabase(supabaseUrl, supabaseAnonKey);
+    return success;
   }
   
   switchToMockMode();

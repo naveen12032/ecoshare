@@ -2,9 +2,46 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <script>
+    window.onerror = function(message, source, lineno, colno, error) {
+      const div = document.createElement('div');
+      div.style.position = 'fixed';
+      div.style.bottom = '10px';
+      div.style.left = '10px';
+      div.style.right = '10px';
+      div.style.background = 'rgba(220, 53, 69, 0.95)';
+      div.style.color = 'white';
+      div.style.padding = '15px';
+      div.style.borderRadius = '5px';
+      div.style.zIndex = '999999';
+      div.style.fontFamily = 'monospace';
+      div.style.fontSize = '12px';
+      div.style.boxShadow = '0 4px 6px rgba(0,0,0,0.2)';
+      div.innerHTML = '<strong>JS Error:</strong> ' + message + ' <br><em>at ' + source + ':' + lineno + ':' + colno + '</em>';
+      document.body.appendChild(div);
+      return false;
+    };
+    window.onunhandledrejection = function(event) {
+      const div = document.createElement('div');
+      div.style.position = 'fixed';
+      div.style.bottom = '10px';
+      div.style.left = '10px';
+      div.style.right = '10px';
+      div.style.background = 'rgba(220, 53, 69, 0.95)';
+      div.style.color = 'white';
+      div.style.padding = '15px';
+      div.style.borderRadius = '5px';
+      div.style.zIndex = '999999';
+      div.style.fontFamily = 'monospace';
+      div.style.fontSize = '12px';
+      div.style.boxShadow = '0 4px 6px rgba(0,0,0,0.2)';
+      div.innerHTML = '<strong>Unhandled Rejection:</strong> ' + (event.reason ? (event.reason.message || event.reason) : 'Unknown promise rejection');
+      document.body.appendChild(div);
+    };
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>EcoShare - Community Resource Sharing & Sustainability Platform</title>
-  <meta name="description" content="Share unused resources, reduce waste, and promote sustainable living with your neighbors. Build a greener community together using EcoShare.">
+  <title>EcoCircle - Community Resource Sharing & Sustainability Platform</title>
+  <meta name="description" content="Share unused resources, reduce waste, and promote sustainable living with your neighbors. Build a greener community together using EcoCircle.">
   
   <!-- Leaflet Maps CSS & JS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
@@ -30,7 +67,7 @@
               <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
             </svg>
           </div>
-          <span class="brand-name">EcoShare</span>
+          <span class="brand-name">EcoCircle</span>
         </div>
 
         <nav aria-label="Main Navigation">
@@ -45,6 +82,16 @@
               <a href="#messages" id="navMessages" class="nav-link">
                 <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                 <span>Messages</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="#ai-assistant" id="navAIAssistant" class="nav-link">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+                  <path d="m5 3 1 2.5L8.5 6 6 7 5 9.5 4 7 1.5 6 4 5.5 5 3Z"/>
+                  <path d="m19 17 1 2.5 2.5.5-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1 1-2.5Z"/>
+                </svg>
+                <span>Eco Assistant</span>
               </a>
             </li>
             <li class="nav-item">
@@ -84,7 +131,7 @@
         <div class="brand-logo" style="width:32px;height:32px;">
           <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
         </div>
-        <span class="mobile-brand-name">EcoShare</span>
+        <span class="mobile-brand-name">EcoCircle</span>
       </div>
       <div class="mobile-top-actions">
         <button id="mobileThemeToggle" class="btn btn-secondary btn-icon-only mobile-icon-btn" aria-label="Toggle theme" title="Toggle theme"></button>
@@ -104,6 +151,14 @@
       <a href="#messages" id="mobileNavMessages" class="mobile-nav-item">
         <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
         <span>Messages</span>
+      </a>
+      <a href="#ai-assistant" id="mobileNavAIAssistant" class="mobile-nav-item">
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+          <path d="m5 3 1 2.5L8.5 6 6 7 5 9.5 4 7 1.5 6 4 5.5 5 3Z"/>
+          <path d="m19 17 1 2.5 2.5.5-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1 1-2.5Z"/>
+        </svg>
+        <span>Eco AI</span>
       </a>
       <a href="#" id="mobileNavShare" class="mobile-nav-item">
         <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
@@ -125,7 +180,7 @@
       <!-- Top Utility Header -->
       <header class="page-header">
         <div class="header-title">
-          <h1 id="pageTitleHeading">EcoShare Platform</h1>
+          <h1 id="pageTitleHeading">EcoCircle Platform</h1>
           <p id="pageSubtitle">Reduce waste, share surplus, and support your neighbors.</p>
         </div>
         <div style="display: flex; gap: 1rem; align-items: center;">
@@ -307,6 +362,114 @@
           </div>
         </div>
       </section>
+
+      <!-- Eco AI Assistant Section -->
+      <section id="ai-assistant" class="content-section" aria-labelledby="aiHeadingTitle">
+        <div class="dashboard-grid">
+          
+          <!-- Left Column: Suggestion Panel & AI Settings Promo -->
+          <div class="dashboard-sidebar">
+            <div class="sidebar-panel">
+              <h2 class="section-title">AI Quick Starts</h2>
+              <div class="panel-list" style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">
+                <button class="ai-suggestion-card" data-prompt="How can I start composting at home easily?">
+                  <div style="font-size: 1.25rem;">🍂</div>
+                  <div style="text-align: left;">
+                    <div style="font-weight: 700; font-size: 0.85rem; color: var(--text-main);">Home Composting</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">Steps to start composting</div>
+                  </div>
+                </button>
+                <button class="ai-suggestion-card" data-prompt="What items are safe to recycle in general and how do I prep them?">
+                  <div style="font-size: 1.25rem;">♻️</div>
+                  <div style="text-align: left;">
+                    <div style="font-weight: 700; font-size: 0.85rem; color: var(--text-main);">Recycling Guide</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">Standard recycling rules</div>
+                  </div>
+                </button>
+                <button class="ai-suggestion-card" data-prompt="Estimate the carbon footprint offset of sharing a running lawnmower with 5 neighbors.">
+                  <div style="font-size: 1.25rem;">🌱</div>
+                  <div style="text-align: left;">
+                    <div style="font-weight: 700; font-size: 0.85rem; color: var(--text-main);">Lawnmower Share Offset</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">CO2 reduction calculations</div>
+                  </div>
+                </button>
+                <button class="ai-suggestion-card" data-prompt="Give me 5 creative DIY upcycling ideas for old cardboard boxes and plastic jars.">
+                  <div style="font-size: 1.25rem;">🎨</div>
+                  <div style="text-align: left;">
+                    <div style="font-weight: 700; font-size: 0.85rem; color: var(--text-main);">Upcycling DIY Ideas</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">Crafting with household waste</div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <div class="sidebar-panel" id="aiApiKeyAlert" style="background: linear-gradient(135deg, var(--primary-glow) 0%, rgba(245, 158, 11, 0.05) 100%); border: 1px dashed var(--border-color); padding: 1.25rem; border-radius: var(--radius-md);">
+              <div style="display: flex; gap: 0.75rem;">
+                <span style="font-size: 1.5rem;">✨</span>
+                <div>
+                  <h4 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 0.35rem; color: var(--text-main);">Live Gemini Brain</h4>
+                  <p style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 0.75rem;">
+                    Unlock full AI replies by adding a Gemini API Key under <strong>Database Settings</strong>.
+                  </p>
+                  <button id="aiConfigOpenBtn" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.4rem 0.8rem; border-radius: 6px;">Configure Key</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Interactive Chat Panel -->
+          <div class="dashboard-main">
+            <div class="chat-thread-panel" style="min-height: 520px; display: flex; flex-direction: column; background-color: var(--bg-card); border-radius: var(--radius-lg); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); overflow: hidden;">
+              <header class="chat-workspace-header" style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; background-color: var(--bg-card);">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                  <div class="brand-logo" style="width: 38px; height: 38px; background: linear-gradient(135deg, var(--accent) 0%, var(--primary) 100%);">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+                  </div>
+                  <div>
+                    <h3 id="aiHeadingTitle" style="font-size: 1.1rem; font-weight: 700; color: var(--text-main);">EcoCircle AI Assistant</h3>
+                    <div style="font-size: 0.75rem; color: var(--accent); font-weight: 600; display: flex; align-items: center; gap: 0.25rem;">
+                      <span class="pulse-indicator"></span> Live Sustainability Advisor
+                    </div>
+                  </div>
+                </div>
+                <button id="aiClearChatBtn" class="btn btn-secondary btn-icon-only" style="width: 36px; height: 36px; border-radius: 50%;" title="Clear conversation" aria-label="Clear chat">
+                  <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
+              </header>
+              
+              <!-- Messages Container -->
+              <div id="aiChatMessages" class="chat-messages-thread-container" style="flex-grow: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; max-height: 400px; min-height: 350px;">
+                <!-- Initial greeting message -->
+                <div class="chat-msg chat-msg-partner" style="display: flex; gap: 0.75rem; align-items: flex-start; max-width: 85%;">
+                  <div class="chat-msg-avatar" style="width: 32px; height: 32px; border-radius: 50%; background-color: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0;">AI</div>
+                  <div class="chat-msg-body" style="background-color: var(--primary-light); color: var(--text-main); padding: 0.9rem 1.25rem; border-radius: 0 16px 16px 16px; font-size: 0.9rem; line-height: 1.5; box-shadow: var(--shadow-sm);">
+                    Hi there! I am your EcoCircle AI Assistant. 🌟 <br><br>
+                    Ask me anything about:
+                    <ul style="margin-left: 1.25rem; margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.25rem;">
+                      <li>Recycling rules and preparation</li>
+                      <li>Composting techniques for beginners</li>
+                      <li>Upcycling household objects</li>
+                      <li>Estimating Carbon Footprint (CO2) savings</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Chat Form Input -->
+              <form id="aiChatForm" class="chat-send-box-wrapper" style="padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); display: flex; gap: 0.75rem; background-color: var(--bg-card); align-items: center;">
+                <input type="text" id="aiChatInput" placeholder="Ask a sustainability question..." required autocomplete="off" style="flex-grow: 1; padding: 0.85rem 1.25rem; border-radius: var(--radius-md); border: 1.5px solid var(--border-color); background-color: var(--bg-app); color: var(--text-main); font-family: var(--font-body); font-size: 0.95rem; transition: border-color var(--transition-fast);" />
+                <button type="submit" id="aiChatSubmitBtn" class="btn btn-primary btn-icon-only" aria-label="Send query">
+                  <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                  </svg>
+                </button>
+              </form>
+            </div>
+          </div>
+
+        </div>
+      </section>
       
       <!-- Admin Panel Section -->
       <section id="admin" class="content-section" aria-labelledby="adminHeading">
@@ -425,7 +588,7 @@
             <!-- Tab 2: Pending Requests Content -->
             <div id="adminRequestsContent" class="admin-tab-content" style="display: none;">
               <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: -0.5rem; margin-bottom: 1.5rem;">
-                Review and manage user registration requests for the EcoShare community.
+                Review and manage user registration requests for the EcoCircle community.
               </p>
               <div class="resources-grid" id="pendingUsersGrid" style="grid-template-columns: 1fr; gap: 1rem;">
                 <!-- Dynamically populated user requests -->
@@ -463,7 +626,7 @@
         <div class="brand-logo" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
         </div>
-        <h2>Welcome to EcoShare</h2>
+        <h2>Welcome to EcoCircle</h2>
         <p>Your local community resource sharing platform</p>
       </header>
 
@@ -552,7 +715,13 @@
         <div class="modal-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
           
           <div class="form-group">
-            <label for="resourceTitle">Title / Name</label>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+              <label for="resourceTitle" style="margin-bottom: 0;">Title / Name</label>
+              <button type="button" id="aiAutoFillBtn" class="btn" style="font-size: 0.75rem; padding: 0.35rem 0.75rem; display: flex; align-items: center; gap: 0.3rem; border-radius: 6px; border: 1px solid var(--accent); color: var(--accent); background-color: var(--accent-light); cursor: pointer; transition: all var(--transition-fast);">
+                <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.5" fill="none"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+                <span>AI Auto-Fill</span>
+              </button>
+            </div>
             <div class="input-container">
               <input type="text" id="resourceTitle" class="input-field" style="padding-left: 1rem;" placeholder="e.g. Electric Lawn Mower, Fresh Strawberries" required>
             </div>
@@ -833,18 +1002,18 @@
             <div class="form-row">
               <div class="form-group">
                 <label for="projectId">Project ID</label>
-                <input type="text" id="projectId" class="input-field" style="padding-left: 1rem;" placeholder="ecoshare-app-123">
+                <input type="text" id="projectId" class="input-field" style="padding-left: 1rem;" placeholder="EcoCircle-app-123">
               </div>
               <div class="form-group">
                 <label for="authDomain">Auth Domain</label>
-                <input type="text" id="authDomain" class="input-field" style="padding-left: 1rem;" placeholder="ecoshare-app-123.firebaseapp.com">
+                <input type="text" id="authDomain" class="input-field" style="padding-left: 1rem;" placeholder="EcoCircle-app-123.firebaseapp.com">
               </div>
             </div>
 
             <div class="form-row">
               <div class="form-group">
                 <label for="storageBucket">Storage Bucket</label>
-                <input type="text" id="storageBucket" class="input-field" style="padding-left: 1rem;" placeholder="ecoshare-app-123.appspot.com">
+                <input type="text" id="storageBucket" class="input-field" style="padding-left: 1rem;" placeholder="EcoCircle-app-123.appspot.com">
               </div>
               <div class="form-group">
                 <label for="messagingSenderId">Messaging Sender ID</label>
@@ -870,6 +1039,26 @@
             </div>
           </div>
 
+          <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 0.5rem 0;">
+          
+          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <h4 style="font-family: var(--font-headings); font-weight: 700; font-size: 1rem; color: var(--text-main); display: flex; align-items: center; gap: 0.35rem;">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" style="color: var(--accent);"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+              Gemini AI Integration
+            </h4>
+            <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">
+              Paste a Gemini API key to enable live AI-powered descriptions, CO2 offset estimation, and the sustainability chatbot. Get a free key at <a href="https://aistudio.google.com/" target="_blank" style="color: var(--accent); text-decoration: underline; font-weight: 600;">Google AI Studio</a>.
+            </p>
+          </div>
+
+          <div class="form-group">
+            <label for="geminiApiKeyInput">Gemini API Key</label>
+            <div class="input-container">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; color: var(--text-muted);"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.778-7.778zM12 2v4m10 4h-4M5.64 5.64l2.82 2.82M18.36 5.64l-2.82 2.82"/></svg>
+              <input type="password" id="geminiApiKeyInput" class="input-field" style="padding-left: 2.75rem;" placeholder="Enter Gemini API Key (Optional)">
+            </div>
+          </div>
+
         </div>
         <footer class="modal-footer" style="gap: 1rem;">
           <button type="button" id="disconnectCloudBtn" class="btn btn-danger" style="margin-right: auto; display: none;">Disconnect Cloud</button>
@@ -882,7 +1071,12 @@
 
 
 
+  <!-- Environment config (sets window.__ENV__ with Supabase/Firebase credentials) -->
+  <script src="src/env-config.js"></script>
+  <!-- Offline/WebView-safe Local Supabase UMD Bundle -->
+  <script src="src/supabase-js.js"></script>
   <!-- ES6 App Controller Module -->
   <script type="module" src="src/app.js"></script>
 </body>
 </html>
+

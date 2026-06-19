@@ -1,4 +1,4 @@
-// Authentication manager for EcoShare
+// Authentication manager for EcoCircle
 import { authService } from './firebase-config.js';
 
 let currentUser = null;
@@ -81,28 +81,35 @@ export function initAuth(showToast) {
     const password = document.getElementById('loginPassword').value;
     const submitBtn = loginForm.querySelector('button[type="submit"]');
 
+    // Clear any previous inline error
+    const existingErr = loginForm.querySelector('.form-error-banner');
+    if (existingErr) existingErr.remove();
+
     if (!email || !password) {
-      showToast('Please fill in all fields.', 'warning');
+      showInlineError(loginForm, submitBtn, 'Please fill in all fields.');
       return;
     }
 
     try {
       setLoadingState(submitBtn, true, 'Signing In...');
-      localStorage.setItem('ecoshare_auth_in_progress', 'true');
+      localStorage.setItem('EcoCircle_auth_in_progress', 'true');
       const user = await authService.login(email, password);
       if (user && user.activeSessionId) {
-        localStorage.setItem('ecoshare_session_id', user.activeSessionId);
+        localStorage.setItem('EcoCircle_session_id', user.activeSessionId);
       }
-      showToast('Welcome back to EcoShare!', 'success');
+      showToast('Welcome back to EcoCircle!', 'success');
       loginForm.reset();
     } catch (err) {
       console.error(err);
-      showToast(err.message || 'Login failed. Please try again.', 'error');
+      const msg = err.message || 'Login failed. Please check your email and password.';
+      showInlineError(loginForm, submitBtn, msg);
+      showToast(msg, 'error');
     } finally {
-      localStorage.removeItem('ecoshare_auth_in_progress');
+      localStorage.removeItem('EcoCircle_auth_in_progress');
       setLoadingState(submitBtn, false, 'Sign In');
     }
   });
+
 
 
 
@@ -133,19 +140,32 @@ export function initAuth(showToast) {
 
     try {
       setLoadingState(submitBtn, true, 'Creating Account...');
-      localStorage.setItem('ecoshare_auth_in_progress', 'true');
+      localStorage.setItem('EcoCircle_auth_in_progress', 'true');
       const response = await authService.register(email, password, name, location);
       
-      if (response && response.activeSessionId) {
-        localStorage.setItem('ecoshare_session_id', response.activeSessionId);
+      if (response && response.verificationRequired) {
+        showToast('Registration successful! Check your email to verify.', 'success');
+        showInlineSuccess(registerForm, submitBtn, 'Account created! Please check your email inbox to verify and activate your account.');
+        registerForm.reset();
+      } else {
+        if (response && response.activeSessionId) {
+          localStorage.setItem('EcoCircle_session_id', response.activeSessionId);
+        }
+        showToast('Account created successfully! Welcome!', 'success');
+        registerForm.reset();
+        // Clear any inline errors
+        const existingErr = registerForm.querySelector('.form-error-banner');
+        if (existingErr) existingErr.remove();
+        const existingSucc = registerForm.querySelector('.form-success-banner');
+        if (existingSucc) existingSucc.remove();
       }
-      showToast('Account created successfully! Welcome!', 'success');
-      registerForm.reset();
     } catch (err) {
       console.error(err);
-      showToast(err.message || 'Registration failed.', 'error');
+      const msg = err.message || 'Registration failed.';
+      showInlineError(registerForm, submitBtn, msg);
+      showToast(msg, 'error');
     } finally {
-      localStorage.removeItem('ecoshare_auth_in_progress');
+      localStorage.removeItem('EcoCircle_auth_in_progress');
       setLoadingState(submitBtn, false, 'Sign Up');
     }
   });
@@ -155,7 +175,7 @@ export function initAuth(showToast) {
   // Logout Action
   logoutBtn.addEventListener('click', async () => {
     try {
-      localStorage.removeItem('ecoshare_session_id');
+      localStorage.removeItem('EcoCircle_session_id');
       await authService.logout();
       showToast('Logged out successfully.', 'info');
       // Redirect to dashboard page state to avoid viewing protected pages after logout
@@ -169,15 +189,15 @@ export function initAuth(showToast) {
   // Listen for Authentication State Changes
   authService.onAuthStateChanged((user) => {
     if (user) {
-      const cachedSessionId = localStorage.getItem('ecoshare_session_id');
-      const authInProgress = localStorage.getItem('ecoshare_auth_in_progress') === 'true';
+      const cachedSessionId = localStorage.getItem('EcoCircle_session_id');
+      const authInProgress = localStorage.getItem('EcoCircle_auth_in_progress') === 'true';
 
       if (user.activeSessionId && !authInProgress) {
         if (!cachedSessionId) {
-          localStorage.setItem('ecoshare_session_id', user.activeSessionId);
+          localStorage.setItem('EcoCircle_session_id', user.activeSessionId);
         } else if (cachedSessionId !== user.activeSessionId) {
           console.warn('Session mismatch detected. Logging out...');
-          localStorage.removeItem('ecoshare_session_id');
+          localStorage.removeItem('EcoCircle_session_id');
           authService.logout().then(() => {
             showToast('You have been logged out because this account logged in from another location.', 'warning');
           }).catch(err => {
@@ -187,7 +207,7 @@ export function initAuth(showToast) {
         }
       }
     } else {
-      localStorage.removeItem('ecoshare_session_id');
+      localStorage.removeItem('EcoCircle_session_id');
     }
 
     currentUser = user;
@@ -294,7 +314,7 @@ export function initAuth(showToast) {
   if (pendingSignOutBtn) {
     pendingSignOutBtn.addEventListener('click', async () => {
       try {
-        localStorage.removeItem('ecoshare_session_id');
+        localStorage.removeItem('EcoCircle_session_id');
         await authService.logout();
         showToast('Signed out successfully.', 'info');
         const pendingApprovalContainer = document.getElementById('pendingApprovalContainer');
@@ -322,6 +342,62 @@ function setLoadingState(button, isLoading, text) {
     button.disabled = false;
     button.textContent = button.dataset.originalText || text;
   }
+}
+
+// Helper to show a persistent inline error inside a form
+function showInlineError(form, beforeEl, message) {
+  // Remove any existing error banner
+  const existing = form.querySelector('.form-error-banner');
+  if (existing) existing.remove();
+
+  const banner = document.createElement('div');
+  banner.className = 'form-error-banner';
+  banner.style.cssText = 'background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:8px;display:flex;align-items:center;gap:8px;';
+  banner.innerHTML = `
+    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" style="flex-shrink:0">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="12" y1="8" x2="12" y2="12"></line>
+      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+    </svg>
+    <span>${message}</span>
+  `;
+
+  // Insert before the submit button
+  if (beforeEl && beforeEl.parentNode) {
+    beforeEl.parentNode.insertBefore(banner, beforeEl);
+  } else {
+    form.appendChild(banner);
+  }
+
+  // Auto-remove after 10 seconds
+  setTimeout(() => { if (banner.parentNode) banner.remove(); }, 10000);
+}
+
+// Helper to show a persistent inline success banner inside a form
+function showInlineSuccess(form, beforeEl, message) {
+  const existingErr = form.querySelector('.form-error-banner');
+  if (existingErr) existingErr.remove();
+  const existingSucc = form.querySelector('.form-success-banner');
+  if (existingSucc) existingSucc.remove();
+
+  const banner = document.createElement('div');
+  banner.className = 'form-success-banner';
+  banner.style.cssText = 'background:#f0fdf4;border:1px solid #86efac;color:#16a34a;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:8px;display:flex;align-items:center;gap:8px;';
+  banner.innerHTML = `
+    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" style="flex-shrink:0">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+    </svg>
+    <span>${message}</span>
+  `;
+
+  if (beforeEl && beforeEl.parentNode) {
+    beforeEl.parentNode.insertBefore(banner, beforeEl);
+  } else {
+    form.appendChild(banner);
+  }
+
+  setTimeout(() => { if (banner.parentNode) banner.remove(); }, 12000);
 }
 
 let adminResourcesUnsubscribe = null;

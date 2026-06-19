@@ -1,10 +1,10 @@
-// Map controller module using Leaflet.js
+﻿// Map controller module using Leaflet.js
 // Provides main map visualization and form location pickers
 
 let mainMapInstance = null;
 let mainMapMarkers = [];
 
-// Custom green pin icon matching the EcoShare forest theme
+// Custom green pin icon matching the EcoCircle forest theme
 const createCustomIcon = (category) => {
   // We can vary the color slightly by category if we want, or use a beautiful emerald green
   const color = 'var(--primary)'; // #10b981

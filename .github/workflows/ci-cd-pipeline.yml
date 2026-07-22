@@ -29,7 +29,6 @@ jobs:
 
       - name: Run All Jest Test Suites
         run: npm test -- --forceExit --json --outputFile=jest-results.json
-        continue-on-error: false
 
       - name: Upload Jest Results JSON
         uses: actions/upload-artifact@v4
@@ -116,15 +115,14 @@ jobs:
       - name: Verify Chrome Installation
         run: google-chrome --version
 
-      - name: Start Local App Server (Mock Mode)
+      - name: Start Local App Server
         run: |
           python -m http.server 3000 --directory www &
           sleep 3
           curl --retry 5 --retry-delay 1 --retry-connrefused http://localhost:3000 -o /dev/null -s -w "HTTP Status: %{http_code}\n"
 
       - name: Run Selenium E2E Test Suite
-        run: |
-          PYTHONUTF8=1 python run_e2e.py
+        run: PYTHONUTF8=1 python run_e2e.py
         env:
           DISPLAY: :99
 
@@ -147,6 +145,8 @@ jobs:
 
     permissions:
       contents: write
+      pages: write
+      id-token: write
 
     steps:
       - name: Checkout Repository
@@ -167,15 +167,15 @@ jobs:
           name: built-app
           path: www/
 
-      - name: Configure Git Identity
-        run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-
       - name: Deploy to GitHub Pages
-        run: npm run deploy
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./www
+          publish_branch: gh-pages
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          commit_message: 'Deploy EcoCircle to GitHub Pages [skip ci]'
 
       - name: Deployment Complete
         run: |

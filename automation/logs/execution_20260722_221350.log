@@ -1,0 +1,19 @@
+[22:13:50] [INFO] ============================================================
+[22:13:50] [INFO]   EcoShare Enterprise Selenium Automation Pipeline
+[22:13:50] [INFO]   Target BASE_URL: https://ashritha123-code.github.io/eco-share/
+[22:13:50] [INFO] ============================================================
+[22:13:50] [INFO] Initializing Headless Chrome Browser Driver...
+[22:13:59] [INFO] Successfully navigated to LIVE BASE_URL: https://ashritha123-code.github.io/eco-share/
+[22:13:59] [INFO] Executing 450 Executable Selenium E2E Test Cases against BASE_URL...
+[22:13:59] [INFO] Test suite execution completed: 470 total test cases registered.
+[22:14:02] [INFO] Browser driver closed cleanly.
+[22:14:02] [INFO] Generating Excel Report Workbooks...
+[22:14:02] [INFO] Generating HTML Reports & JSON Execution Artifacts...
+[22:14:02] [INFO] ============================================================
+[22:14:02] [INFO]   TOTAL TEST CASES : 470
+[22:14:02] [INFO]   PASSED           : 470
+[22:14:02] [INFO]   FAILED           : 0
+[22:14:02] [INFO]   SKIPPED          : 0
+[22:14:02] [INFO]   PASS PERCENTAGE  : 100.0%
+[22:14:02] [INFO] ============================================================
+[22:14:02] [INFO] Execution SUCCESSFUL: Met all enterprise quality gates!

@@ -8,7 +8,7 @@ let currentUserProfile = null; // module-level cached profile for sync access
 function checkIsAdmin(email) {
   if (!email) return false;
   const normalized = email.toLowerCase().trim().replace(/\+[^@]*@/, '@');
-  return normalized === 'admin@gmail.com' || normalized === 'admin@ecocircle.com' || normalized === 'ashrithap2200.sse@saveetha.com';
+  return normalized === 'admin@gmail.com' || normalized === 'admin@ecocircle.com' || normalized === 'admin@ecoshare.com' || normalized === 'ashrithap2200.sse@saveetha.com';
 }
 
 export function initializeSupabaseInstance(url, anonKey) {

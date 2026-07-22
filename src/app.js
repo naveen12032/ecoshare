@@ -5,6 +5,7 @@ import { initAIAssistant } from './ai-assistant.js';
 import { 
   tryInitializeFirebase, 
   tryInitializeSupabase,
+  tryInitializeMysql,
   removeCloudConfig, 
   getActiveProviderName, 
   getActiveProviderType,
@@ -118,6 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const configProviderSelect = document.getElementById('configProviderSelect');
   const firebaseConfigFields = document.getElementById('firebaseConfigFields');
   const supabaseConfigFields = document.getElementById('supabaseConfigFields');
+  const mysqlConfigFields = document.getElementById('mysqlConfigFields');
 
   // Load existing configurations in inputs if present
   const savedFirebase = localStorage.getItem('EcoCircle_firebase_config');
@@ -146,6 +148,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  const savedMysqlUrl = localStorage.getItem('EcoCircle_mysql_server_url') || '';
+  if (document.getElementById('mysqlServerUrl')) {
+    document.getElementById('mysqlServerUrl').value = savedMysqlUrl;
+  }
+
   const savedActiveProvider = localStorage.getItem('EcoCircle_active_provider_type') || 'mock';
   if (configProviderSelect) {
     configProviderSelect.value = savedActiveProvider === 'mock' ? 'supabase' : savedActiveProvider;
@@ -162,15 +169,31 @@ document.addEventListener('DOMContentLoaded', () => {
     if (provider === 'firebase') {
       firebaseConfigFields.style.display = 'flex';
       supabaseConfigFields.style.display = 'none';
+      if (mysqlConfigFields) mysqlConfigFields.style.display = 'none';
+    } else if (provider === 'mysql') {
+      firebaseConfigFields.style.display = 'none';
+      supabaseConfigFields.style.display = 'none';
+      if (mysqlConfigFields) mysqlConfigFields.style.display = 'flex';
     } else {
       firebaseConfigFields.style.display = 'none';
       supabaseConfigFields.style.display = 'flex';
+      if (mysqlConfigFields) mysqlConfigFields.style.display = 'none';
     }
   }
 
   // Bind Open/Close settings triggers
   configModalClose.addEventListener('click', () => configModal.classList.remove('active'));
   cancelConfigBtn.addEventListener('click', () => configModal.classList.remove('active'));
+  
+  const authConfigOpenBtn = document.getElementById('authConfigOpenBtn');
+  if (authConfigOpenBtn) {
+    authConfigOpenBtn.addEventListener('click', () => {
+      configModal.classList.add('active');
+      const modalBody = configModal.querySelector('.modal-body');
+      if (modalBody) modalBody.scrollTop = 0;
+    });
+  }
+
   window.addEventListener('click', (e) => {
     if (e.target === configModal) {
       configModal.classList.remove('active');
@@ -197,8 +220,10 @@ document.addEventListener('DOMContentLoaded', () => {
         firebaseStatusText.textContent = 'Connected to your Live Google Firebase project. Authentications, assets and items are synchronized with Firestore/Storage.';
       } else if (providerType === 'supabase') {
         firebaseStatusText.textContent = 'Connected to your Live Supabase project. Authentications, assets and items are synchronized with PostgreSQL/Supabase Storage.';
+      } else if (providerType === 'mysql') {
+        firebaseStatusText.textContent = 'Connected to your Local XAMPP MySQL database. Authentications, assets, resources and messages are stored in MySQL.';
       } else {
-        firebaseStatusText.textContent = 'Running in mock database mode (LocalStorage). Data stays locally in your browser. Connect to a Cloud database below.';
+        firebaseStatusText.textContent = 'Running in mock database mode (LocalStorage). Data stays locally in your browser. Connect to a database below.';
       }
     }
     if (disconnectCloudBtn) {
@@ -240,6 +265,25 @@ document.addEventListener('DOMContentLoaded', () => {
       } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Connect Cloud';
+      }
+    } else if (provider === 'mysql') {
+      try {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Connecting...';
+        showToast('Connecting to local MySQL database...', 'info');
+
+        const mysqlUrl = document.getElementById('mysqlServerUrl') ? document.getElementById('mysqlServerUrl').value.trim() : '';
+        localStorage.setItem('EcoCircle_mysql_server_url', mysqlUrl);
+
+        await tryInitializeMysql();
+        showToast('Connected to local MySQL successfully!', 'success');
+        configModal.classList.remove('active');
+      } catch (err) {
+        console.error(err);
+        showToast('Connection failed: ' + (err.message || 'Check connection'), 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Connect Database';
       }
     } else {
       // Supabase

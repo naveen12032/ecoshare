@@ -1,7 +1,8 @@
 // Firebase configuration manager and service provider
-// Dynamically switches between the Mock LocalStorage DB and the Live Firebase backend
+// Dynamically switches between the Mock LocalStorage DB, Live Firebase backend, Live Supabase backend, and Local MySQL
 
 import mockDb from './mock-db.js';
+import { MysqlProvider } from './mysql-service.js';
 
 let activeProvider = mockDb;
 let activeProviderType = 'mock'; // 'mock' | 'firebase' | 'supabase'
@@ -692,6 +693,26 @@ export async function tryInitializeFirebase(config) {
   }
 }
 
+// MySQL Local Database Initializer
+export async function tryInitializeMysql() {
+  try {
+    activeProvider = MysqlProvider;
+    activeProviderType = 'mysql';
+    currentProviderName = 'Local MySQL (XAMPP)';
+
+    localStorage.setItem('EcoCircle_active_provider_type', 'mysql');
+
+    syncAuthProviderSubscription();
+    notifyProviderChanged();
+    console.log("MySQL initialized successfully.");
+    return true;
+  } catch (err) {
+    console.error("MySQL Initialization Failed. Falling back to Mock DB.", err);
+    switchToMockMode();
+    throw err;
+  }
+}
+
 // Supabase SDK Dynamic Initializer
 export async function tryInitializeSupabase(url, anonKey) {
   if (!url || !anonKey) {
@@ -744,9 +765,9 @@ export function removeFirebaseConfig() {
 
 export async function autoInitializeConfig() {
   let activeType = localStorage.getItem('EcoCircle_active_provider_type');
-  if (!activeType || activeType === 'mock') {
-    activeType = 'supabase';
-    localStorage.setItem('EcoCircle_active_provider_type', 'supabase');
+  if (!activeType) {
+    activeType = 'mysql';
+    localStorage.setItem('EcoCircle_active_provider_type', 'mysql');
   }
 
   if (activeType === 'firebase') {
@@ -774,6 +795,9 @@ export async function autoInitializeConfig() {
         console.error("Error loading cached LocalStorage config:", e);
       }
     }
+  } else if (activeType === 'mysql') {
+    const success = await tryInitializeMysql();
+    return success;
   } else if (activeType === 'supabase') {
     const savedConfig = localStorage.getItem('EcoCircle_supabase_config');
     // Read from window.__ENV__ (generated from .env at build time)

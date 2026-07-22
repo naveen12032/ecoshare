@@ -94,7 +94,7 @@
                 <span>Eco Assistant</span>
               </a>
             </li>
-            <li class="nav-item">
+            <li class="nav-item" id="navSettingsItem" style="display: none;">
               <a href="#settings" id="navSettings" class="nav-link">
                 <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                 <span>Database Settings</span>
@@ -164,8 +164,8 @@
         <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
         <span>Share</span>
       </a>
-      <a href="#settings" id="mobileNavSettings" class="mobile-nav-item">
-        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      <a href="#settings" id="mobileNavSettings" class="mobile-nav-item" style="display: none;">
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
         <span>Connect</span>
       </a>
       <a href="#admin" id="mobileNavAdmin" class="mobile-nav-item" style="display:none;">
@@ -699,6 +699,15 @@
         </form>
 
       </div>
+
+      <!-- Database Settings Trigger for Logged out users -->
+      <div id="loginConfigContainer" style="text-align: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px dashed var(--border-color); display: none;">
+        <a href="#settings" id="mobileNavSettings" class="mobile-nav-item" style="display: none;">
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        <span>Database Settings</span>
+        </a>
+      </div>
+
     </div>
   </div>
 
@@ -985,10 +994,11 @@
           <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 0.5rem 0;">
 
           <div class="form-group">
-            <label for="configProviderSelect">Cloud Database Provider</label>
+            <label for="configProviderSelect">Database Provider</label>
             <select id="configProviderSelect" class="filter-select" style="width: 100%; padding: 0.9rem 1rem;">
+              <option value="mysql" selected>MySQL (Local XAMPP)</option>
               <option value="firebase">Firebase (Google Cloud)</option>
-              <option value="supabase" selected>Supabase (PostgreSQL Cloud)</option>
+              <option value="supabase">Supabase (PostgreSQL Cloud)</option>
             </select>
           </div>
 
@@ -1036,6 +1046,17 @@
             <div class="form-group">
               <label for="supabaseAnonKey">Supabase Anon Key</label>
               <input type="text" id="supabaseAnonKey" class="input-field" style="padding-left: 1rem;" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+            </div>
+          </div>
+
+          <!-- MySQL Fields Wrapper -->
+          <div id="mysqlConfigFields" style="display: none; flex-direction: column; gap: 1.25rem;">
+            <div class="form-group">
+              <label for="mysqlServerUrl">MySQL Express Server URL (Mobile/Capacitor)</label>
+              <input type="url" id="mysqlServerUrl" class="input-field" style="padding-left: 1rem;" placeholder="e.g. http://10.0.2.2:3000 or http://192.168.1.100:3000">
+              <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+                Only needed when running on mobile. For browsers, leave empty or use default.
+              </p>
             </div>
           </div>
 

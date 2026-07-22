@@ -28,9 +28,20 @@ export function initAuth(showToast) {
   const loginEmail = document.getElementById('loginEmail');
   const registerEmail = document.getElementById('registerEmail');
   const otpEmail = document.getElementById('otpEmail');
+  const loginConfigContainer = document.getElementById('loginConfigContainer');
+  function checkEmailForAdmin(val) {
+    if (!val) return false;
+    const email = val.toLowerCase().trim();
+    return email.includes('admin') || email === 'ashrithap2200.sse@saveetha.com';
+  }
+
   if (loginEmail) {
     loginEmail.addEventListener('input', (e) => {
       e.target.value = e.target.value.replace(/\s+/g, '');
+      if (loginConfigContainer) {
+        const is_admin = checkEmailForAdmin(e.target.value);
+        loginConfigContainer.style.display = is_admin ? 'block' : 'none';
+      }
     });
   }
   if (registerEmail) {
@@ -52,6 +63,10 @@ export function initAuth(showToast) {
     loginForm.classList.add('active');
     if (otpForm) otpForm.classList.remove('active');
     registerForm.classList.remove('active');
+    if (loginConfigContainer && loginEmail) {
+      const is_admin = checkEmailForAdmin(loginEmail.value);
+      loginConfigContainer.style.display = is_admin ? 'block' : 'none';
+    }
   });
 
   if (tabOtp) {
@@ -62,6 +77,7 @@ export function initAuth(showToast) {
       if (otpForm) otpForm.classList.add('active');
       loginForm.classList.remove('active');
       registerForm.classList.remove('active');
+      if (loginConfigContainer) loginConfigContainer.style.display = 'none';
     });
   }
 
@@ -72,6 +88,7 @@ export function initAuth(showToast) {
     registerForm.classList.add('active');
     loginForm.classList.remove('active');
     if (otpForm) otpForm.classList.remove('active');
+    if (loginConfigContainer) loginConfigContainer.style.display = 'none';
   });
 
   // Login Form Submission
@@ -225,6 +242,8 @@ export function initAuth(showToast) {
 
         // Show/hide admin sidebar nav and mobile admin bottom nav link
         const mobileNavAdmin = document.getElementById('mobileNavAdmin');
+        const navSettingsItem = document.getElementById('navSettingsItem');
+        const mobileNavSettings = document.getElementById('mobileNavSettings');
         if (navAdminItem) {
           if (user.role === 'admin') {
             navAdminItem.style.display = 'block';
@@ -233,6 +252,19 @@ export function initAuth(showToast) {
             navAdminItem.style.display = 'none';
             if (mobileNavAdmin) mobileNavAdmin.style.display = 'none';
             if (window.location.hash === '#admin') {
+              window.location.hash = '#dashboard';
+            }
+          }
+        }
+        
+        if (navSettingsItem) {
+          if (user.role === 'admin') {
+            navSettingsItem.style.display = 'block';
+            if (mobileNavSettings) mobileNavSettings.style.display = 'flex';
+          } else {
+            navSettingsItem.style.display = 'none';
+            if (mobileNavSettings) mobileNavSettings.style.display = 'none';
+            if (window.location.hash === '#settings') {
               window.location.hash = '#dashboard';
             }
           }
@@ -302,6 +334,11 @@ export function initAuth(showToast) {
       if (navAdminItem) navAdminItem.style.display = 'none';
       const mobileNavAdmin = document.getElementById('mobileNavAdmin');
       if (mobileNavAdmin) mobileNavAdmin.style.display = 'none';
+      
+      const navSettingsItem = document.getElementById('navSettingsItem');
+      const mobileNavSettings = document.getElementById('mobileNavSettings');
+      if (navSettingsItem) navSettingsItem.style.display = 'none';
+      if (mobileNavSettings) mobileNavSettings.style.display = 'none';
 
       authContainer.classList.add('active');
       sidebarUserWidget.style.display = 'none';
